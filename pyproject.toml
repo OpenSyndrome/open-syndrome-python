@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "open-syndrome-python"
+version = "0.1.0"
+description = ""
+authors = ["Ana Paula Gomes <apgomes88@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+osi = "osi.cli:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+click = "^8.1.8"
+jsonschema = "^4.23.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
