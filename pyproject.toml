@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "open-syndrome-python"
+name = "osi"
 version = "0.1.0"
 description = ""
 authors = ["Ana Paula Gomes <apgomes88@gmail.com>"]
@@ -12,7 +12,8 @@ osi = "osi.cli:main"
 python = "^3.11"
 click = "^8.1.8"
 jsonschema = "^4.23.0"
-
+requests = "^2.32.3"
+pygments = "^2.19.1"
 
 [build-system]
 requires = ["poetry-core"]

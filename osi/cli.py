@@ -34,8 +34,29 @@ def validate_json(json_file, schema_file):
         click.echo(click.style(f"❌ An unexpected error occurred: {e}", fg="red"), err=True)
 
 
+def color_json(json_definition):
+    formatted_json = json.dumps(json.loads(json_definition), indent=4)
+    return highlight(formatted_json, lexers.JsonLexer(), formatters.TerminalFormatter())
+
+
+@cli.command("convert")
+@click.option("--validate", is_flag=True, help="Validate the JSON file against the schema.")
+def convert_to_json(validate):
+    """
+    Convert human-readable definition to the Open Syndrome format.
+
+    If the --validate flag is passed, the JSON file will be validated against the schema.
+    """
+    human_readable_definition = click.edit()
+    machine_readable_definition = generate_human_readable_format(human_readable_definition)
+    click.echo(color_json(machine_readable_definition))
+
+    if validate:
+        validate_machine_readable_format(machine_readable_definition)
+
+
 def main():
-    validate_json()
+    cli()
 
 
 if __name__ == "__main__":
