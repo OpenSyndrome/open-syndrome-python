@@ -1,11 +1,18 @@
 import json
-from pathlib import Path
-
+from pygments import highlight, lexers, formatters
 import jsonschema
 import click
 
+from osi.converters import generate_human_readable_format
+from osi.validators import validate_machine_readable_format
 
-@click.command()
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command("validate")
 @click.argument("json_file", type=click.Path(exists=True))
 @click.argument("schema_file", type=click.Path(exists=True), default="schema.json")
 def validate_json(json_file, schema_file):
@@ -15,11 +22,9 @@ def validate_json(json_file, schema_file):
     JSON_FILE: Path to the JSON file to validate.
     SCHEMA_FILE: Path to the JSON Schema file.
     """
-    json_data = json.loads(Path(json_file).read_text())
-    schema_data = json.loads(Path(schema_file).read_text())
 
     try:
-        jsonschema.validate(json_data, schema_data)
+        validate_machine_readable_format(json_file, schema_file)
         click.echo(click.style("✅ Validation successful!", fg="green"))
     except json.JSONDecodeError as e:
         click.echo(click.style(f"❌ Invalid JSON: {e}", fg="red"), err=True)
