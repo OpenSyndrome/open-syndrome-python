@@ -25,7 +25,7 @@ def load_examples(examples_dir):
 EXAMPLES = load_examples(os.getenv("EXAMPLES_DIR"))
 OLLAMA_BASE_URL = os.getenv("", "http://localhost:11434/")
 OLLAMA_JSON_SCHEMA = json.load(open("ollama_schema.json"))
-PROMPT = """  # TODO update prompt with few-shot examples
+PROMPT = """
 You are an expert in creating standardized case definition JSONs for medical syndromes.
 Generate a JSON that strictly follows this JSON schema, using the provided example documents as reference.
 
@@ -43,7 +43,7 @@ Example documents to reference:
 Input: {human_readable_definition}
 
 Expected Output Format:
-- Use English language
+- Use American English language
 - JSON matching provided schema
 - Clinical criteria reflecting ONLY input text
 - No additional professional judgment or external information
