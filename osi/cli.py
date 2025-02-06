@@ -21,7 +21,9 @@ def validate_machine_readable_format_with_style(json_or_file, schema_file=None):
     except jsonschema.exceptions.ValidationError as e:
         click.echo(click.style(f"❌ Validation error: {e}", fg="red"), err=True)
     except Exception as e:
-        click.echo(click.style(f"❌ An unexpected error occurred: {e}", fg="red"), err=True)
+        click.echo(
+            click.style(f"❌ An unexpected error occurred: {e}", fg="red"), err=True
+        )
 
 
 @cli.command("validate")
@@ -43,8 +45,15 @@ def color_json(json_definition: dict):
 
 
 @cli.command("convert")
-@click.option("--validate", is_flag=True, help="Validate the JSON file against the schema.")
-@click.option("--model", type=str, help="Model used to generate the JSON file.", default="llama3.2")
+@click.option(
+    "--validate", is_flag=True, help="Validate the JSON file against the schema."
+)
+@click.option(
+    "--model",
+    type=str,
+    help="Model used to generate the JSON file.",
+    default="llama3.2",
+)
 def convert_to_json(validate, model):
     """
     Convert human-readable definition to the Open Syndrome format.
@@ -52,7 +61,9 @@ def convert_to_json(validate, model):
     If the --validate flag is passed, the JSON file will be validated against the schema.
     """
     human_readable_definition = click.edit()
-    machine_readable_definition = generate_human_readable_format(human_readable_definition, model)
+    machine_readable_definition = generate_human_readable_format(
+        human_readable_definition, model
+    )
     click.echo(color_json(machine_readable_definition))
 
     if validate:
