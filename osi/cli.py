@@ -12,6 +12,18 @@ def cli():
     pass
 
 
+def validate_machine_readable_format_with_style(json_or_file, schema_file=None):
+    try:
+        validate_machine_readable_format(json_or_file, schema_file)
+        click.echo(click.style("✅ Validation successful!", fg="green"))
+    except json.JSONDecodeError as e:
+        click.echo(click.style(f"❌ Invalid JSON: {e}", fg="red"), err=True)
+    except jsonschema.exceptions.ValidationError as e:
+        click.echo(click.style(f"❌ Validation error: {e}", fg="red"), err=True)
+    except Exception as e:
+        click.echo(click.style(f"❌ An unexpected error occurred: {e}", fg="red"), err=True)
+
+
 @cli.command("validate")
 @click.argument("json_file", type=click.Path(exists=True))
 @click.argument("schema_file", type=click.Path(exists=True), default="schema.json")
@@ -22,20 +34,11 @@ def validate_json(json_file, schema_file):
     JSON_FILE: Path to the JSON file to validate.
     SCHEMA_FILE: Path to the JSON Schema file.
     """
-
-    try:
-        validate_machine_readable_format(json_file, schema_file)
-        click.echo(click.style("✅ Validation successful!", fg="green"))
-    except json.JSONDecodeError as e:
-        click.echo(click.style(f"❌ Invalid JSON: {e}", fg="red"), err=True)
-    except jsonschema.exceptions.ValidationError as e:
-        click.echo(click.style(f"❌ Validation error: {e}", fg="red"), err=True)
-    except Exception as e:
-        click.echo(click.style(f"❌ An unexpected error occurred: {e}", fg="red"), err=True)
+    validate_machine_readable_format_with_style(json_file, schema_file)
 
 
-def color_json(json_definition):
-    formatted_json = json.dumps(json.loads(json_definition), indent=4)
+def color_json(json_definition: dict):
+    formatted_json = json.dumps(json_definition, indent=4)
     return highlight(formatted_json, lexers.JsonLexer(), formatters.TerminalFormatter())
 
 
@@ -53,7 +56,7 @@ def convert_to_json(validate, model):
     click.echo(color_json(machine_readable_definition))
 
     if validate:
-        validate_machine_readable_format(machine_readable_definition)
+        validate_machine_readable_format_with_style(machine_readable_definition)
 
 
 def main():
