@@ -52,4 +52,3 @@ def generate_human_readable_format(human_readable_definition, model="llama3.2"):
         })
     response.raise_for_status()
     return response.json()['response']
-g

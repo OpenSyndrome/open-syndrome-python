@@ -41,14 +41,15 @@ def color_json(json_definition):
 
 @cli.command("convert")
 @click.option("--validate", is_flag=True, help="Validate the JSON file against the schema.")
-def convert_to_json(validate):
+@click.option("--model", type=str, help="Model used to generate the JSON file.", default="llama3.2")
+def convert_to_json(validate, model):
     """
     Convert human-readable definition to the Open Syndrome format.
 
     If the --validate flag is passed, the JSON file will be validated against the schema.
     """
     human_readable_definition = click.edit()
-    machine_readable_definition = generate_human_readable_format(human_readable_definition)
+    machine_readable_definition = generate_human_readable_format(human_readable_definition, model)
     click.echo(color_json(machine_readable_definition))
 
     if validate:
