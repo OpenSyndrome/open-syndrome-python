@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -48,6 +49,14 @@ Expected Output Format:
 """
 
 
+def fill_automatic_fields(machine_readable_definition):
+    machine_readable_definition = json.loads(machine_readable_definition)
+    machine_readable_definition['published_in'] = "https://opensyndrome.org"  # TODO assemble url based on repo
+    machine_readable_definition['published_at'] = str(datetime.now().isoformat())
+    machine_readable_definition['open_syndrome_version'] = 1  # TODO get this version from definition repo
+    return machine_readable_definition
+
+
 def generate_human_readable_format(human_readable_definition, model="mistral"):
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
@@ -68,4 +77,6 @@ def generate_human_readable_format(human_readable_definition, model="mistral"):
             }
         })
     response.raise_for_status()
-    return response.json()['response']
+    machine_readable_definition = response.json()['response']
+    return fill_automatic_fields(machine_readable_definition)
+
