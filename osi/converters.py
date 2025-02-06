@@ -1,9 +1,26 @@
 import json
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
 import requests
+load_dotenv()
 
 
+def load_examples(examples_dir):
+    json_definitions = {}
+    for raw_json in Path(examples_dir).iterdir():
+        json_definitions[raw_json.stem] = json.loads(raw_json.read_text())
+
+    examples = '\n'.join(
+        f'- {json.dumps(_definition)}'
+        for _definition in json_definitions.values()
+        if _definition
+    )
+    return examples
+
+
+EXAMPLES = load_examples(os.getenv('EXAMPLES_DIR'))
 OLLAMA_BASE_URL = os.getenv('', "http://localhost:11434/")
 OLLAMA_JSON_SCHEMA = json.load(open("ollama_schema.json"))
 PROMPT = """  # TODO update prompt with few-shot examples
@@ -31,12 +48,12 @@ Expected Output Format:
 """
 
 
-def generate_human_readable_format(human_readable_definition, model="llama3.2"):
+def generate_human_readable_format(human_readable_definition, model="mistral"):
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
     formatted_prompt = PROMPT.format(
-        examples="",
+        examples=EXAMPLES,
         human_readable_definition=human_readable_definition
     )
     response = requests.post(
