@@ -5,7 +5,10 @@ from pygments import highlight, lexers, formatters
 import jsonschema
 import click
 
-from osi.converters import generate_machine_readable_format, generate_human_readable_format
+from osi.converters import (
+    generate_machine_readable_format,
+    generate_human_readable_format,
+)
 from osi.validators import validate_machine_readable_format
 
 
@@ -18,7 +21,7 @@ def validate_machine_readable_format_with_style(json_or_file, schema_file=None):
     try:
         validate_machine_readable_format(json_or_file, schema_file)
         click.echo(click.style("✅ Validation successful!", fg="green"))
-    except json.JSONDecodeError as e:
+    except (json.JSONDecodeError, json.decoder.JSONDecodeError) as e:
         click.echo(click.style(f"❌ Invalid JSON: {e}", fg="red"), err=True)
     except jsonschema.exceptions.ValidationError as e:
         click.echo(click.style(f"❌ Validation error: {e}", fg="red"), err=True)
@@ -30,7 +33,7 @@ def validate_machine_readable_format_with_style(json_or_file, schema_file=None):
 
 @cli.command("validate")
 @click.argument("json_file", type=click.Path(exists=True))
-@click.argument("schema_file", type=click.Path(exists=True), default="schema.json")
+@click.option("--schema-file", type=click.Path(exists=True))
 def validate_json(json_file, schema_file):
     """
     Validate a JSON file against a JSON Schema.
