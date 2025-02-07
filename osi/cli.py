@@ -59,7 +59,13 @@ def color_json(json_definition: dict):
     help="Model used to generate the JSON file.",
     default="llama3.2",
 )
-def convert_to_json(validate, model):
+@click.option(
+    "--language",
+    type=str,
+    help="Language used to generate the machine-readable definition.",
+    default="American English",
+)
+def convert_to_json(validate, model, language):
     """
     Convert human-readable definition to the Open Syndrome format.
 
@@ -67,7 +73,7 @@ def convert_to_json(validate, model):
     """
     human_readable_definition = click.edit()
     machine_readable_definition = generate_machine_readable_format(
-        human_readable_definition, model
+        human_readable_definition, model, language
     )
     click.echo(color_json(machine_readable_definition))
 

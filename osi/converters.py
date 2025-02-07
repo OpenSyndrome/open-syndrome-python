@@ -43,7 +43,7 @@ Example documents to reference:
 Input: {human_readable_definition}
 
 Expected Output Format:
-- Use American English language
+- Use {language} language
 - JSON matching provided schema
 - Clinical criteria reflecting ONLY input text
 - No additional professional judgment or external information
@@ -74,12 +74,16 @@ def fill_automatic_fields(machine_readable_definition):
     return machine_readable_definition
 
 
-def generate_machine_readable_format(human_readable_definition, model="mistral"):
+def generate_machine_readable_format(
+    human_readable_definition, model="mistral", language="American English"
+):
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
     formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
-        examples=EXAMPLES, human_readable_definition=human_readable_definition
+        examples=EXAMPLES,
+        human_readable_definition=human_readable_definition,
+        language=language,
     )
     response = requests.post(
         f"{OLLAMA_BASE_URL}/api/generate",
@@ -96,13 +100,14 @@ def generate_machine_readable_format(human_readable_definition, model="mistral")
     return fill_automatic_fields(machine_readable_definition)
 
 
-def generate_human_readable_format(machine_readable_definition, model="mistral", language="American English"):
+def generate_human_readable_format(
+    machine_readable_definition, model="mistral", language="American English"
+):
     if not machine_readable_definition:
         raise ValueError("Machine-readable definition cannot be empty.")
 
     formatted_prompt = PROMPT_TO_HUMAN_READABLE_FORMAT.format(
-        language=language,
-        machine_readable_definition=machine_readable_definition
+        language=language, machine_readable_definition=machine_readable_definition
     )
     response = requests.post(
         f"{OLLAMA_BASE_URL}/api/generate",
