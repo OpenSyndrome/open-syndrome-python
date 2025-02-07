@@ -25,7 +25,7 @@ def load_examples(examples_dir):
 EXAMPLES = load_examples(os.getenv("EXAMPLES_DIR"))
 OLLAMA_BASE_URL = os.getenv("", "http://localhost:11434/")
 OLLAMA_JSON_SCHEMA = json.load(open("ollama_schema.json"))
-PROMPT = """
+PROMPT_TO_MACHINE_READABLE_FORMAT = """
 You are an expert in creating standardized case definition JSONs for medical syndromes.
 Generate a JSON that strictly follows this JSON schema, using the provided example documents as reference.
 
@@ -48,6 +48,18 @@ Expected Output Format:
 - Clinical criteria reflecting ONLY input text
 - No additional professional judgment or external information
 """
+PROMPT_TO_HUMAN_READABLE_FORMAT = """
+You are an expert in creating standardized case definition JSONs for medical syndromes.
+Generate a human-readable definition from the provided machine-readable JSON using only
+the criteria and symptoms mentioned in the JSON.
+
+Expected Output Format:
+- Use {language} language
+- Clear, concise, and easy to understand text
+- No additional professional judgment or external information
+
+{machine_readable_definition}
+"""
 
 
 def fill_automatic_fields(machine_readable_definition):
@@ -62,11 +74,11 @@ def fill_automatic_fields(machine_readable_definition):
     return machine_readable_definition
 
 
-def generate_human_readable_format(human_readable_definition, model="mistral"):
+def generate_machine_readable_format(human_readable_definition, model="mistral"):
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
-    formatted_prompt = PROMPT.format(
+    formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
         examples=EXAMPLES, human_readable_definition=human_readable_definition
     )
     response = requests.post(
@@ -82,3 +94,25 @@ def generate_human_readable_format(human_readable_definition, model="mistral"):
     response.raise_for_status()
     machine_readable_definition = response.json()["response"]
     return fill_automatic_fields(machine_readable_definition)
+
+
+def generate_human_readable_format(machine_readable_definition, model="mistral", language="American English"):
+    if not machine_readable_definition:
+        raise ValueError("Machine-readable definition cannot be empty.")
+
+    formatted_prompt = PROMPT_TO_HUMAN_READABLE_FORMAT.format(
+        language=language,
+        machine_readable_definition=machine_readable_definition
+    )
+    response = requests.post(
+        f"{OLLAMA_BASE_URL}/api/generate",
+        json={
+            "model": model,
+            "prompt": formatted_prompt,
+            "stream": False,
+            "options": {"temperature": 0},
+        },
+    )
+    response.raise_for_status()
+    human_readable_definition = response.json()["response"]
+    return human_readable_definition

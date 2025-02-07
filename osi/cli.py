@@ -1,9 +1,11 @@
 import json
+from pathlib import Path
+
 from pygments import highlight, lexers, formatters
 import jsonschema
 import click
 
-from osi.converters import generate_human_readable_format
+from osi.converters import generate_machine_readable_format, generate_human_readable_format
 from osi.validators import validate_machine_readable_format
 
 
@@ -61,13 +63,33 @@ def convert_to_json(validate, model):
     If the --validate flag is passed, the JSON file will be validated against the schema.
     """
     human_readable_definition = click.edit()
-    machine_readable_definition = generate_human_readable_format(
+    machine_readable_definition = generate_machine_readable_format(
         human_readable_definition, model
     )
     click.echo(color_json(machine_readable_definition))
 
     if validate:
         validate_machine_readable_format_with_style(machine_readable_definition)
+
+
+@cli.command("humanize")
+@click.argument("json_file", type=click.Path(exists=True))
+@click.option(
+    "--model",
+    type=str,
+    help="Model used to generate the JSON file.",
+    default="llama3.2",
+)
+@click.option(
+    "--language",
+    type=str,
+    help="Language used to generate the human-readable definition.",
+    default="American English",
+)
+def convert_to_text(json_file, model, language):
+    machine_readable_definition = json.loads(Path(json_file).read_text())
+    text = generate_human_readable_format(machine_readable_definition, model, language)
+    click.echo(click.style(text, fg="green"))
 
 
 def main():

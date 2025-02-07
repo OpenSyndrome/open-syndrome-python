@@ -16,6 +16,14 @@ osi convert --model mistral
 osi convert --validate
 ```
 
+### Convert a machine-readable JSON syndrome definition to a human-readable format
+
+```bash
+osi humanize <path-to-json-file>
+osi humanize <path-to-json-file> --model mistral
+osi humanize <path-to-json-file> --model mistral --language "Português do Brasil"
+```
+
 ### Validate a machine-readable JSON syndrome definition
 
 ```bash
