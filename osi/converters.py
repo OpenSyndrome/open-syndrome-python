@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -7,6 +8,7 @@ from dotenv import load_dotenv
 import requests
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 def load_examples(examples_dir):
@@ -62,15 +64,17 @@ Expected Output Format:
 """
 
 
-def fill_automatic_fields(machine_readable_definition):
-    machine_readable_definition = json.loads(machine_readable_definition)
+def _fill_automatic_fields(machine_readable_definition):
     machine_readable_definition["published_in"] = (
         "https://opensyndrome.org"  # TODO assemble url based on repo
     )
     machine_readable_definition["published_at"] = str(datetime.now().isoformat())
     machine_readable_definition["open_syndrome_version"] = (
-        1  # TODO get this version from definition repo
+        "1.0.0"  # TODO get this version from definition repo
     )
+    machine_readable_definition["references"] = [
+        {"citation": "", "url": ""}
+    ]  # to be filled by the user
     return machine_readable_definition
 
 
@@ -97,7 +101,13 @@ def generate_machine_readable_format(
     )
     response.raise_for_status()
     machine_readable_definition = response.json()["response"]
-    return fill_automatic_fields(machine_readable_definition)
+
+    machine_readable_definition = json.loads(machine_readable_definition)
+    if isinstance(machine_readable_definition, list):
+        if len(machine_readable_definition) > 1:
+            logger.warning("More than one definition generated...")
+        machine_readable_definition = machine_readable_definition[0]
+    return _fill_automatic_fields(machine_readable_definition)
 
 
 def generate_human_readable_format(
