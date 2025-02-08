@@ -24,9 +24,7 @@ def load_examples(examples_dir):
     return examples
 
 
-EXAMPLES = load_examples(os.getenv("EXAMPLES_DIR"))
 OLLAMA_BASE_URL = os.getenv("", "http://localhost:11434/")
-OLLAMA_JSON_SCHEMA = json.load(open("ollama_schema.json"))
 PROMPT_TO_MACHINE_READABLE_FORMAT = """
 You are an expert in creating standardized case definition JSONs for medical syndromes.
 Generate a JSON that strictly follows this JSON schema, using the provided example documents as reference.
@@ -103,8 +101,10 @@ def generate_machine_readable_format(
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
+    examples = load_examples(os.getenv("EXAMPLES_DIR"))
+    ollama_json_schema = json.load(open("ollama_schema.json"))
     formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
-        examples=EXAMPLES,
+        examples=examples,
         human_readable_definition=human_readable_definition,
         language=language,
     )
@@ -113,7 +113,7 @@ def generate_machine_readable_format(
         json={
             "model": model,
             "prompt": formatted_prompt,
-            "format": OLLAMA_JSON_SCHEMA,
+            "format": ollama_json_schema,
             "stream": False,
             "options": {"temperature": 0},
         },
