@@ -64,7 +64,22 @@ Expected Output Format:
 """
 
 
-def _fill_automatic_fields(machine_readable_definition):
+def _add_first_level_required_fields(definition: dict):
+    """Add mandatory fields and empty values as placeholders."""
+    default_values = {
+        "string": "",
+        "array": [],
+        "object": {},
+        "integer": 0,
+    }
+    schema = json.loads(Path(os.getenv("SCHEMA_FILE")).read_text())
+    missing_fields = set(schema["required"]) - set(definition.keys())
+    for field in missing_fields:
+        definition[field] = default_values.get(schema["properties"][field]["type"])
+    return definition
+
+
+def _fill_automatic_fields(machine_readable_definition: dict):
     machine_readable_definition["published_in"] = (
         "https://opensyndrome.org"  # TODO assemble url based on repo
     )
@@ -76,6 +91,9 @@ def _fill_automatic_fields(machine_readable_definition):
     machine_readable_definition["references"] = [
         {"citation": "", "url": ""}
     ]  # to be filled by the user
+    machine_readable_definition = _add_first_level_required_fields(
+        machine_readable_definition
+    )
     return machine_readable_definition
 
 

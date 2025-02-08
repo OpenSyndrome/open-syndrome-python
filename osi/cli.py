@@ -85,7 +85,8 @@ def convert_to_json(validate, model, language, edit):
         machine_readable_definition_edited = click.edit(
             text=json.dumps(machine_readable_definition, indent=4), extension=".json"
         )
-        machine_readable_definition = json.loads(machine_readable_definition_edited)
+        if machine_readable_definition_edited:
+            machine_readable_definition = json.loads(machine_readable_definition_edited)
 
     click.echo(color_json(machine_readable_definition))
 
