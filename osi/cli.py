@@ -57,7 +57,7 @@ def color_json(json_definition: dict):
     "--model",
     type=str,
     help="Model used to generate the JSON file.",
-    default="llama3.2",
+    default="mistral",
 )
 @click.option(
     "--language",
@@ -100,7 +100,7 @@ def convert_to_json(validate, model, language, edit):
     "--model",
     type=str,
     help="Model used to generate the JSON file.",
-    default="llama3.2",
+    default="mistral",
 )
 @click.option(
     "--language",
