@@ -65,16 +65,28 @@ def color_json(json_definition: dict):
     help="Language used to generate the machine-readable definition.",
     default="American English",
 )
-def convert_to_json(validate, model, language):
+@click.option(
+    "--edit",
+    is_flag=True,
+    help="Open editor after generation.",
+)
+def convert_to_json(validate, model, language, edit):
     """
     Convert human-readable definition to the Open Syndrome format.
 
     If the --validate flag is passed, the JSON file will be validated against the schema.
     """
-    human_readable_definition = click.edit()
+    human_readable_definition = click.edit(extension=".json")
     machine_readable_definition = generate_machine_readable_format(
         human_readable_definition, model, language
     )
+
+    if edit:
+        machine_readable_definition_edited = click.edit(
+            text=json.dumps(machine_readable_definition, indent=4), extension=".json"
+        )
+        machine_readable_definition = json.loads(machine_readable_definition_edited)
+
     click.echo(color_json(machine_readable_definition))
 
     if validate:

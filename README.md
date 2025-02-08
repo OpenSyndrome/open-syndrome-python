@@ -12,7 +12,10 @@ We have tested llama3.2, mistral, and deepseek-r1 so far.
 osi convert
 osi convert --model mistral
 
-# or include a validation step after conversion
+# to have the JSON translated to a specific language and edit it just after conversion
+osi convert --language "Português do Brasil" --model mistral --edit
+
+# include a validation step after conversion
 osi convert --validate
 ```
 

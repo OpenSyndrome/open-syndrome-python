@@ -69,6 +69,7 @@ def _fill_automatic_fields(machine_readable_definition):
         "https://opensyndrome.org"  # TODO assemble url based on repo
     )
     machine_readable_definition["published_at"] = str(datetime.now().isoformat())
+    machine_readable_definition["published_by"] = []
     machine_readable_definition["open_syndrome_version"] = (
         "1.0.0"  # TODO get this version from definition repo
     )
