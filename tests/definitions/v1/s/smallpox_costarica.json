@@ -1,0 +1,151 @@
+{
+  "title": "Open Syndrome Smallpox",
+  "language": "English",
+  "version": "1.0.0",
+  "location": "Costa Rica",
+  "scope": "broad",
+  "category": "suspected",
+  "organization": "Caja Costarricense de Seguro Social",
+  "authors": [
+    "Dirección de Desarrollo de Servicios de Salud"
+  ],
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-02-08T17:44:54Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "inclusion_criteria": [
+    {
+      "type": "criteria",
+      "logical_operator": "AND",
+      "values": [
+        {
+          "type": "symptom",
+          "name": "Acute unexplained rash",
+          "attribute": "onset_date",
+          "operator": "<",
+          "value": "2022-03-15"
+        },
+        {
+          "type": "criteria",
+          "name": "One or more of the following symptoms",
+          "logical_operator": "AT_LEAST",
+          "logical_operator_arguments": [
+            1
+          ],
+          "values": [
+            {
+              "type": "symptom",
+              "name": "Headache"
+            },
+            {
+              "type": "symptom",
+              "name": "Sudden onset fever",
+              "description": "Sudden onset fever (>38.5°C)"
+            },
+            {
+              "type": "symptom",
+              "name": "Muscle pain"
+            },
+            {
+              "type": "symptom",
+              "name": "Back pain"
+            },
+            {
+              "type": "symptom",
+              "name": "Fatigue"
+            },
+            {
+              "type": "symptom",
+              "name": "Lymphadenopathy"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "exclusion_criteria": [
+    {
+      "name": "Cause of ruling out acute exanthema",
+      "type": "criteria",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "diagnosis",
+          "name": "Chickenpox"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Shingles"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Measles"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Rubella"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Zika virus"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue fever"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Chikungunya virus"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Common cold herpes"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Bacterial skin infections"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Disseminated gonococcal infection"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Primary or secondary syphilis"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Chancroid"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Lymphogranuloma venereum"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Granuloma inguinale"
+        },
+        {
+          "type": "diagnosis",
+          "name": "molluscum contagiosum"
+        },
+        {
+          "type": "diagnosis",
+          "name": "allergic reaction (for example, to plants)"
+        },
+        {
+          "type": "diagnosis",
+          "name": "vesicular or papular rash"
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "citation": "",
+      "url": "https://www.cendeisss.sa.cr/wp/wp-content/uploads/2024/04/Protocolo-Viruela-Simica.CCSS_.pdf"
+    }
+  ]
+}

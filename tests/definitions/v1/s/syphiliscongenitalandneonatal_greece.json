@@ -1,0 +1,66 @@
+{
+  "title": "Open Syndrome Syphilis congenital and neonatal",
+  "description": "",
+  "scope": "broad",
+  "category": "suspected",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "location": "Greece",
+  "language": "English",
+  "organization": "National Public Health Organization",
+  "inclusion_criteria": [
+    {
+      "type": "criteria",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "symptom",
+          "name": "Hepatosplenomegaly"
+        },
+        {
+          "type": "symptom",
+          "name": "Rash",
+          "description": "Non-vesicular"
+        },
+        {
+          "type": "symptom",
+          "name": "Diarrhea"
+        },
+        {
+          "type": "symptom",
+          "name": "Vomiting"
+        },
+        {
+          "type": "symptom",
+          "name": "Convulsion (expected in seizures and osteochondritis)"
+        },
+        {
+          "type": "symptom",
+          "name": "Signs of central nervous system involvement"
+        },
+        {
+          "type": "symptom",
+          "name": "Anemia"
+        },
+        {
+          "type": "symptom",
+          "name": "Renal symptoms"
+        },
+        {
+          "type": "symptom",
+          "name": "Decreased appetite"
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "url": "https://eody.gov.gr/wp-content/uploads/2022/04/orismoi-loimodon-nosimaton-20220413.pdf"
+    }
+  ],
+  "published_at": "2025-02-08T11:15:13Z"
+}

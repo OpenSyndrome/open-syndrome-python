@@ -1,0 +1,67 @@
+{
+  "title": "Open Syndrome Zika",
+  "description": "",
+  "scope": "broad",
+  "category": "suspected",
+  "version": "1.0.0",
+  "location": "Americas",
+  "language": "English",
+  "organization": "PAHO",
+  "inclusion_criteria": [
+    {
+      "type": "criteria",
+      "logical_operator": "AND",
+      "values": [
+        {
+          "type": "symptom",
+          "name": "Rash",
+          "description": "Usually pruritic and maculopapular"
+        },
+        {
+          "type": "criteria",
+          "logical_operator": "AT_LEAST",
+          "logical_operator_arguments": [
+            2
+          ],
+          "values": [
+            {
+              "type": "symptom",
+              "name": "Fever",
+              "attribute": "body_temperature",
+              "operator": ">=",
+              "value": 38.5,
+              "unit": "Celsius"
+            },
+            {
+              "type": "symptom",
+              "name": "Conjunctivitis (non-purulent/hyperemic)"
+            },
+            {
+              "type": "symptom",
+              "name": "Arthralgia"
+            },
+            {
+              "type": "symptom",
+              "name": "Myalgia"
+            },
+            {
+              "type": "symptom",
+              "name": "Peri-articular edema"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-02-08T18:05:28Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "open_syndrome_version": "1.0.0",
+  "references": [
+    {
+      "url": "https://www.paho.org/en/topics/zika/zika-resources-case-definitions"
+    }
+  ]
+}
