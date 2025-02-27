@@ -31,7 +31,7 @@ def load_examples(examples_dir):
     return examples
 
 
-OLLAMA_BASE_URL = os.getenv("", "http://localhost:11434/")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL")
 PROMPT_TO_MACHINE_READABLE_FORMAT = """
 You are an expert in creating standardized case definition JSONs for medical syndromes.
 Generate a JSON that strictly follows this JSON schema, using the provided example documents as reference.
@@ -89,8 +89,11 @@ def _fill_automatic_fields(machine_readable_definition: dict):
     machine_readable_definition["published_in"] = (
         "https://opensyndrome.org"  # TODO assemble url based on repo
     )
-    machine_readable_definition["published_at"] = str(datetime.now().isoformat())
+    machine_readable_definition["published_at"] = str(
+        datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
     machine_readable_definition["published_by"] = []
+    machine_readable_definition["status"] = "draft"
     machine_readable_definition["open_syndrome_version"] = (
         "1.0.0"  # TODO get this version from definition repo
     )
@@ -110,18 +113,18 @@ def generate_machine_readable_format(
         raise ValueError("Human-readable definition cannot be empty.")
 
     examples = load_examples(os.getenv("EXAMPLES_DIR"))
-    ollama_json_schema = json.load(open("ollama_schema.json"))
     formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
         examples=examples,
         human_readable_definition=human_readable_definition,
         language=language,
     )
+
     response = requests.post(
         f"{OLLAMA_BASE_URL}/api/generate",
         json={
             "model": model,
             "prompt": formatted_prompt,
-            "format": ollama_json_schema,
+            "format": OpenSyndromeCaseDefinitionSchema.model_json_schema(),
             "stream": False,
             "options": {"temperature": 0},
         },
