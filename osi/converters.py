@@ -7,14 +7,21 @@ from pathlib import Path
 from dotenv import load_dotenv
 import requests
 
+from osi.schema import OpenSyndromeCaseDefinitionSchema
+
 load_dotenv()
 logger = logging.getLogger(__name__)
 
 
 def load_examples(examples_dir):
     json_definitions = {}
-    for raw_json in Path(examples_dir).iterdir():
-        json_definitions[raw_json.stem] = json.loads(raw_json.read_text())
+    for raw_json in Path(examples_dir).glob('**/*'):
+        if not raw_json.name.endswith(".json"):
+            continue
+        if raw_json.read_text() != "":
+            content = json.loads(raw_json.read_text())
+            if content:
+                json_definitions[raw_json.stem] = content
 
     examples = "\n".join(
         f"- {json.dumps(_definition)}"

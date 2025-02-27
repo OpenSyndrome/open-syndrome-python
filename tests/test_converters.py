@@ -1,4 +1,4 @@
-from osi.converters import _add_first_level_required_fields
+from osi.converters import _add_first_level_required_fields, load_examples
 
 
 class TestAddFirstLevelRequiredFields:
@@ -21,3 +21,15 @@ class TestAddFirstLevelRequiredFields:
         updated_instance = _add_first_level_required_fields(instance)
 
         assert updated_instance == expected
+
+
+class TestLoadExamples:
+    def test_load_examples(self):
+        examples_dir = "tests/definitions/"
+        expected_break_lines = 2
+        expected_start_lines = 3
+
+        examples = load_examples(examples_dir)
+
+        assert examples.count("\n") == expected_break_lines
+        assert examples.count("- ") == expected_start_lines
