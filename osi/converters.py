@@ -3,6 +3,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+import random
 
 from dotenv import load_dotenv
 import requests
@@ -13,7 +14,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-def load_examples(examples_dir):
+def load_examples(examples_dir, random_k=None):
     json_definitions = {}
     for raw_json in Path(examples_dir).glob("**/*"):
         if not raw_json.name.endswith(".json"):
@@ -23,10 +24,11 @@ def load_examples(examples_dir):
             if content:
                 json_definitions[raw_json.stem] = content
 
+    definitions = list(json_definitions.values())
+    if random_k:
+        definitions = random.sample(definitions, random_k)
     examples = "\n".join(
-        f"- {json.dumps(_definition)}"
-        for _definition in json_definitions.values()
-        if _definition
+        f"- {json.dumps(_definition)}" for _definition in definitions if _definition
     )
     return examples
 
@@ -112,7 +114,7 @@ def generate_machine_readable_format(
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
-    examples = load_examples(os.getenv("EXAMPLES_DIR"))
+    examples = load_examples(os.getenv("EXAMPLES_DIR"), 10)
     formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
         examples=examples,
         human_readable_definition=human_readable_definition,

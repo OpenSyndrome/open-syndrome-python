@@ -1,3 +1,5 @@
+import pytest
+
 from osi.converters import _add_first_level_required_fields, load_examples
 
 
@@ -33,3 +35,11 @@ class TestLoadExamples:
 
         assert examples.count("\n") == expected_break_lines
         assert examples.count("- ") == expected_start_lines
+
+    @pytest.mark.parametrize("k", [1, 2, 3])
+    def test_load_examples_with_k_random_samples(self, k):
+        examples_dir = "tests/definitions/"
+
+        examples = load_examples(examples_dir, k)
+
+        assert examples.count("- ") == k
