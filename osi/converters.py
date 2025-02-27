@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def load_examples(examples_dir):
     json_definitions = {}
-    for raw_json in Path(examples_dir).glob('**/*'):
+    for raw_json in Path(examples_dir).glob("**/*"):
         if not raw_json.name.endswith(".json"):
             continue
         if raw_json.read_text() != "":
@@ -51,8 +51,8 @@ Input: {human_readable_definition}
 
 Expected Output Format:
 - Use {language} language
-- JSON matching provided schema
-- Clinical criteria reflecting ONLY input text
+- JSON matching provided schema only
+- Criteria reflecting ONLY input text
 - No additional professional judgment or external information
 """
 PROMPT_TO_HUMAN_READABLE_FORMAT = """
@@ -64,6 +64,7 @@ Expected Output Format:
 - Use {language} language
 - Clear, concise, and easy to understand text
 - No additional professional judgment or external information
+- Structured JSON output
 
 {machine_readable_definition}
 """
