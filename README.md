@@ -1,5 +1,37 @@
 # open-syndrome-python
 
+## Installation
+
+You can install it from PyPi or from Docker.
+
+From PyPi, install the package with `pip install osi-python`.
+
+From Docker, you can run the following command to build the image, tagged `osi`:
+
+```bash
+docker build -t osi .
+```
+
+Run the container interactively, removing it when it exits
+
+```bash
+docker run --rm osi
+```
+
+To read a `.env` file, mount it:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd)/.env:/app/.env:ro" \
+  osi
+```
+
+To name the container and keep it around:
+
+```bash
+docker run --name osi-cli -it osi
+```
+
 ## Usage
 
 ### Convert a human-readable syndrome definition to a machine-readable JSON
