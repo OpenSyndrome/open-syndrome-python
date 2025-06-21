@@ -28,8 +28,8 @@ class TestAddFirstLevelRequiredFields:
 class TestLoadExamples:
     def test_load_examples(self):
         examples_dir = "tests/definitions/"
-        expected_break_lines = 2
-        expected_start_lines = 3
+        expected_break_lines = 4
+        expected_start_lines = 5
 
         examples = load_examples(examples_dir)
 
