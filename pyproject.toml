@@ -17,11 +17,15 @@ pygments = "^2.19.1"
 python-dotenv = "^1.0.1"
 datamodel-code-generator = "^0.28.1"
 pydantic = "^2.10.6"
+sqlalchemy = "^2.0.41"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.1.0"
 pytest = "^8.3.4"
 pytest-mock = "^3.14.0"
+marimo = "^0.14.5"
+plotly = "^6.1.2"
+polars = "^1.31.0"
 
 [build-system]
 requires = ["poetry-core"]
