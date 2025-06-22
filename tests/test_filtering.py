@@ -17,13 +17,13 @@ class TestFilterRecordsBasedOnDefinition:
                     2024,
                 ],
                 "my_icd_code": [
-                    "J10.9",
-                    "J10.1",
-                    "A92.9",
-                    "A92.2",
-                    "A92.9",
-                    "U07.1",
-                    "A92.9",
+                    "J109",
+                    "J101",
+                    "A929",
+                    "A922",
+                    "A929",
+                    "U071",
+                    "A929",
                 ],
             }
         )
@@ -33,7 +33,9 @@ class TestFilterRecordsBasedOnDefinition:
         assert df.shape == (7, 3)
         df = filter_cases(df, mapping, "arbovirosis_paraguay_sd")
 
-        assert df.shape == (3, 3)
+        assert df.shape == (7, 4)
+        assert "arbovirosis_paraguay_sd" in df.columns
+        assert df["arbovirosis_paraguay_sd"].sum() == 3
 
     def test_filter_records_when_multiple_columns_are_targeted(self):
         df = pl.DataFrame(
@@ -76,4 +78,49 @@ class TestFilterRecordsBasedOnDefinition:
         assert df.shape == (7, 4)
         df = filter_cases(df, mapping, "arbovirosis_aesop_brazil_sd")
 
-        assert df.shape == (4, 4)
+        assert df.shape == (7, 5)
+        assert "arbovirosis_aesop_brazil_sd" in df.columns
+        assert df["arbovirosis_aesop_brazil_sd"].sum() == 4
+
+    def test_filter_records_using_like_condition(self):
+        df = pl.DataFrame(
+            {
+                "week": [1, 1, 1, 2, 2, 2, 1],
+                "year": [
+                    2025,
+                    2025,
+                    2025,
+                    2024,
+                    2024,
+                    2024,
+                    2024,
+                ],
+                "my_icd_code": [
+                    None,
+                    "J101",
+                    "A929",
+                    "A922",
+                    "A929",
+                    "U071",
+                    "J20",
+                ],
+                "ciap": [
+                    "A77",
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                ],
+            }
+        )
+        mapping = [
+            {"system": "ICD-10", "code": "my_icd_code"},
+        ]
+        assert df.shape == (7, 4)
+        df = filter_cases(df, mapping, "sari_rki_germany_sd")
+
+        assert df.shape == (7, 5)
+        assert "sari_rki_germany_sd" in df.columns
+        assert df["sari_rki_germany_sd"].sum() == 3
