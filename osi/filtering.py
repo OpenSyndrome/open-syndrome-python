@@ -4,13 +4,31 @@ from pathlib import Path
 import polars as pl
 
 
+DEFINITIONS_DIR = Path("tests/definitions/")
+
+
 def load_definition(definition_filename, version="v1"):
     letter_dir = definition_filename[0].lower()
     return json.loads(
-        Path(
-            f"tests/definitions/{version}/{letter_dir}/{definition_filename}.json"
+        (
+            DEFINITIONS_DIR / f"{version}/{letter_dir}/{definition_filename}.json"
         ).read_text()
     )
+
+
+def filter_cases_per_definitions(df, mapping, definitions):
+    _df_filtered = df
+    for definition in definitions:
+        _df_filtered = filter_cases(_df_filtered, mapping, definition)
+    return _df_filtered
+
+
+def find_cases_from(term, version="v1"):
+    definitions = []
+    for file_ in (DEFINITIONS_DIR / version).glob("**/*.json"):
+        if term.lower() in file_.name.lower():
+            definitions.append(file_.name.replace(".json", ""))
+    return definitions
 
 
 def filter_cases(df, mapping, definition_filename, version="v1"):
