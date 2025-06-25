@@ -16,6 +16,26 @@ def load_definition(definition_filename, version="v1"):
     )
 
 
+def overlap_definitions(definitions):
+    definition_codes = {}
+    for definition in definitions:
+        json_definition = load_definition(definition)
+        inclusion_criteria = json_definition.get("inclusion_criteria", [])
+        if inclusion_criteria:
+            criterion = inclusion_criteria[0]
+            definition_codes[definition] = set()
+            for value in criterion["values"]:
+                if value.get("code"):
+                    definition_codes[definition].add(
+                        value["code"]["code"].replace(".", "").upper()
+                    )
+    biggest = len(max(definition_codes.values(), key=len))
+    in_common_codes = len(
+        reduce(lambda acc, cond: acc & cond, definition_codes.values())
+    )
+    return in_common_codes / biggest
+
+
 def filter_cases_per_definitions(df, mapping, definitions):
     _df_filtered = df
     for definition in definitions:
@@ -23,7 +43,7 @@ def filter_cases_per_definitions(df, mapping, definitions):
     return _df_filtered
 
 
-def find_cases_from(term, version="v1"):
+def find_cases_from(term, version="v1"):  # TODO rename
     definitions = []
     for file_ in (DEFINITIONS_DIR / version).glob("**/*.json"):
         if term.lower() in file_.name.lower():
