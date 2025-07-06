@@ -1,0 +1,51 @@
+{
+  "title": "Open Syndrome Heat Exposure",
+  "description": "Case definition for suspected heat exposure in individuals with history of extreme heat exposure during Early Temperature Extreme Alert by National Meteorological Service, and clinical symptoms attributable to high body temperature (39°C or higher) and 2 or more of the following: sweating, nausea/vomiting, hypotension, tachycardia, tachypnea, altered consciousness, seizures, fainting. In infants: excessive sweating, irritated skin due to sweating.",
+  "scope": "specific",
+  "category": "suspected",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "location": "Argentina",
+  "language": "English",
+  "organization": "Ministerio de Salud",
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "logical_operator": "AND",
+      "values": [
+        {
+          "type": "diagnosis",
+          "code": {
+            "system": "ICD-10",
+            "code": "X30"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "code": {
+            "system": "ICD-10",
+            "code": "T67"
+          }
+        }
+      ]
+    }
+  ],
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-02-08T12:20:55Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "notes": [
+    "ICD-10 code HEAT: X30 (Exposure to excessive natural heat), T67 (Effects of heat and light)"
+  ],
+  "references": [
+    {
+      "url": "https://www.argentina.gob.ar/sites/default/files/2019/10/msal-manual_de_normas_y_procedimientos_de_vigilancia_y_control_de_eno_2022.pdf"
+    }
+  ],
+  "status": "draft",
+  "human_readable_definition": "",
+  "target_public_health_threats": [],
+  "keywords": [],
+  "definition_type": "case_definition"
+}
