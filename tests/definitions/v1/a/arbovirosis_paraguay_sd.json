@@ -1,0 +1,59 @@
+{
+  "title": "Open Syndrome Arbovirosis in General (Syndrome Definition)",
+  "description": "",
+  "scope": "broad",
+  "category": "suspected",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-01-29T12:00:00Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "location": "Paraguay",
+  "language": "English",
+  "organization": "Ministry of Health and Social Welfare",
+  "authors": [
+    "Dirección General de Vigilancia de la Salud",
+    "Ministerio de Salud Pública y Bienestar Social"
+  ],
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "logical_operator": "AND",
+      "values": [
+        {
+          "type": "diagnosis",
+          "name": "Mosquito-borne viral fever, unspecified",
+          "code": {
+            "system": "ICD-10",
+            "code": "A929"
+          }
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "title": "Guía Nacional de Vigilancia y Control de Eventos de Notificación Obligatoria. Sistema Nacional de Vigilancia Epidemiológica. Paraguay, 2022",
+      "url": "https://dgvs.mspbs.gov.py/files/guiaNacional/Guia_de_Vigilancia_2022_act_28_julio.pdf"
+    },
+    {
+      "url": "https://icd.who.int/browse10/2019/en#/A92.9"
+    }
+  ],
+  "notes": [
+    "Human-readable definition was automatically translated from Spanish to English."
+  ],
+  "status": "draft",
+  "human_readable_definition": "Undifferentiated fever due to mosquito bite. Acute febrile syndrome with no apparent cause",
+  "target_public_health_threats": [
+    "arbovirosis"
+  ],
+  "keywords": [
+    "arbovirosis",
+    "Latin America",
+    "syndrome definition"
+  ],
+  "definition_type": "syndrome_definition"
+}

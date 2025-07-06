@@ -174,3 +174,6 @@ cython_debug/
 schema.json
 ollama_schema.json
 osi/to_be_updated__schema.py
+
+# data
+*.csv

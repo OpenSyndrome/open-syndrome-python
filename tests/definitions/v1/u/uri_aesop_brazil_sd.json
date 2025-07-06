@@ -1,0 +1,397 @@
+{
+  "title": "Open Syndrome Upper Respiratory Tract Infection (URI)",
+  "description": "",
+  "scope": "broad",
+  "category": "suspected",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-06-21T12:00:00Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "location": "Brazil",
+  "language": "Portuguese",
+  "organization": "Fiocruz/Cidacs Bahia",
+  "authors": [
+    "Alert-Early System of Outbreaks with Pandemic Potential (AESOP)"
+  ],
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "symptom",
+          "name": "Fever",
+          "code": {
+            "system": "CIAP",
+            "code": "A03"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Pain attributed to respiratory tract",
+          "code": {
+            "system": "CIAP",
+            "code": "R01"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Difficulty breathing, dyspnea",
+          "code": {
+            "system": "CIAP",
+            "code": "R02"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Noisy breathing",
+          "code": {
+            "system": "CIAP",
+            "code": "R03"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Other respiratory problems",
+          "code": {
+            "system": "CIAP",
+            "code": "R04"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Cough",
+          "code": {
+            "system": "CIAP",
+            "code": "R05"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Sneeze/Nasal Congestion",
+          "code": {
+            "system": "CIAP",
+            "code": "R07"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Other Nasal Signs/Symptoms",
+          "code": {
+            "system": "CIAP",
+            "code": "R08"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Throat signs/symptoms",
+          "code": {
+            "system": "CIAP",
+            "code": "R21"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Voice signs/symptoms",
+          "code": {
+            "system": "CIAP",
+            "code": "R23"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Abnormal expectoration/mucus",
+          "code": {
+            "system": "CIAP",
+            "code": "R25"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Other signs/symptoms of respiratory tract, others",
+          "code": {
+            "system": "CIAP",
+            "code": "R29"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Convulsive cough",
+          "code": {
+            "system": "CIAP",
+            "code": "R71"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Upper Respiratory Tract Infection (URI)",
+          "code": {
+            "system": "CIAP",
+            "code": "R74"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Chronic/Acute Sinusitis",
+          "code": {
+            "system": "CIAP",
+            "code": "R75"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Tonsillitis",
+          "code": {
+            "system": "CIAP",
+            "code": "R76"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Laryngitis/Tracheitis",
+          "code": {
+            "system": "CIAP",
+            "code": "R77"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Bronchitis/Bronchiolitis",
+          "code": {
+            "system": "CIAP",
+            "code": "R78"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Influenza",
+          "code": {
+            "system": "CIAP",
+            "code": "R80"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Pneumonia",
+          "code": {
+            "system": "CIAP",
+            "code": "R81"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Other Respiratory Infections",
+          "code": {
+            "system": "CIAP",
+            "code": "R83"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Other Respiratory Diseases",
+          "code": {
+            "system": "CIAP",
+            "code": "R99"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Nasopharyngitis [Common Cold]",
+          "code": {
+            "system": "CID",
+            "code": "J00"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute sinusitis",
+          "code": {
+            "system": "CID",
+            "code": "J01"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Pharyngitis",
+          "code": {
+            "system": "CID",
+            "code": "J02"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Tonsillitis",
+          "code": {
+            "system": "CID",
+            "code": "J03"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Laryngitis and Tracheitis",
+          "code": {
+            "system": "CID",
+            "code": "J04"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Acute Upper Respiratory Tract Infections of Multiple and Unspecified Sites",
+          "code": {
+            "system": "CID",
+            "code": "J06"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Influenza Due to Identified Avian Influenza Virus",
+          "code": {
+            "system": "CID",
+            "code": "J09"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Influenza Due to Other Identified Influenza Virus",
+          "code": {
+            "system": "CID",
+            "code": "J10"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Influenza Due to Unidentified Influenza Virus",
+          "code": {
+            "system": "CID",
+            "code": "J11"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Viral pneumonia, not elsewhere classified",
+          "code": {
+            "system": "CID",
+            "code": "J12"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Pneumonia due to Streptococcus pneumoniae",
+          "code": {
+            "system": "CID",
+            "code": "J13"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Pneumonia due to Haemophilus influenzae",
+          "code": {
+            "system": "CID",
+            "code": "J14"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Bacterial pneumonia, not elsewhere classified",
+          "code": {
+            "system": "CID",
+            "code": "J15"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Pneumonia in diseases classified elsewhere",
+          "code": {
+            "system": "CID",
+            "code": "J16"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Pneumonia, organism unspecified",
+          "code": {
+            "system": "CID",
+            "code": "J18"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Cough",
+          "code": {
+            "system": "CID",
+            "code": "R05"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Abnormalities of breathing",
+          "code": {
+            "system": "CID",
+            "code": "R06"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Pain in throat and chest* (Exclude R072)",
+          "code": {
+            "system": "CID",
+            "code": "R07"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Disorders of smell and taste",
+          "code": {
+            "system": "CID",
+            "code": "R43"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Fever of other and unknown origin",
+          "code": {
+            "system": "CID",
+            "code": "R50"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Viral infection of unspecified site",
+          "code": {
+            "system": "CID",
+            "code": "B34"
+          }
+        },
+        {
+          "type": "symptom",
+          "name": "Viral agents as the cause of diseases classified to other chapters",
+          "code": {
+            "system": "CID",
+            "code": "B97"
+          }
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "url": "https://github.com/cidacslab/AESOP-Data-Documentation/blob/main/DataPipeline/documentation/code_list_uri_apr2024.csv"
+    }
+  ],
+  "notes": [],
+  "status": "published",
+  "human_readable_definition": "",
+  "target_public_health_threats": [
+    "Upper Respiratory Tract Infection"
+  ],
+  "keywords": [
+    "Upper Respiratory Tract Infection (URI)",
+    "URI",
+    "Latin America",
+    "syndrome definition"
+  ],
+  "definition_type": "syndrome_definition"
+}

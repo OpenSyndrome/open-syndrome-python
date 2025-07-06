@@ -1,0 +1,74 @@
+{
+  "title": "COVID-19 Syndrome Definition Brazil (Mortality)",
+  "description": "",
+  "scope": "broad",
+  "category": "suspected",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-06-21T12:00:00Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "location": "Brazil",
+  "language": "Portuguese",
+  "organization": "Ministry of Health of Brazil",
+  "authors": [],
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "diagnosis",
+          "name": "Dengue",
+          "code": {
+            "system": "CID 10",
+            "code": "B342"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue hemorrhagic fever",
+          "code": {
+            "system": "CID 10",
+            "code": "U071"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue grave",
+          "code": {
+            "system": "CID",
+            "code": "U072"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Unspecified dengue",
+          "code": {
+            "system": "CID",
+            "code": "U921"
+          }
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "url": "http://plataforma.saude.gov.br/cc-br-fic/graficosCodigoCID-10.png"
+    }
+  ],
+  "notes": [],
+  "status": "published",
+  "human_readable_definition": "",
+  "target_public_health_threats": [
+    "COVID-19"
+  ],
+  "keywords": [
+    "COVID-19",
+    "Latin America",
+    "syndrome definition"
+  ],
+  "definition_type": "syndrome_definition"
+}
