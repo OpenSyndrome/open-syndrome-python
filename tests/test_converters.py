@@ -28,15 +28,15 @@ class TestAddFirstLevelRequiredFields:
 class TestLoadExamples:
     def test_load_examples(self):
         examples_dir = "tests/definitions/"
-        expected_break_lines = 4
-        expected_start_lines = 5
+        expected_break_lines = 11
+        expected_start_lines = 13
 
         examples = load_examples(examples_dir)
 
         assert examples.count("\n") == expected_break_lines
         assert examples.count("- ") == expected_start_lines
 
-    @pytest.mark.parametrize("k", [1, 2, 3])
+    @pytest.mark.parametrize("k", [1, 2, 4])
     def test_load_examples_with_k_random_samples(self, k):
         examples_dir = "tests/definitions/"
 
