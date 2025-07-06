@@ -98,11 +98,11 @@ class TestFilterRecordsBasedOnDefinition:
                 "my_icd_code": [
                     None,
                     "J101",
-                    "A929",
+                    "A972",
                     "A922",
                     "A929",
                     "U071",
-                    "J20",
+                    "A979",
                 ],
                 "ciap": [
                     "A77",
@@ -116,14 +116,14 @@ class TestFilterRecordsBasedOnDefinition:
             }
         )
         mapping = [
-            {"system": "ICD-10", "code": "my_icd_code"},
+            {"system": "CID 10", "code": "my_icd_code"},
         ]
         assert df.shape == (7, 4)
-        df = filter_cases(df, mapping, "sari_rki_germany_sd")
+        df = filter_cases(df, mapping, "arbovirosis_aesop_brazil_sd_with_like")
 
         assert df.shape == (7, 5)
-        assert "sari_rki_germany_sd" in df.columns
-        assert df["sari_rki_germany_sd"].sum() == 3
+        assert "arbovirosis_aesop_brazil_sd_with_like" in df.columns
+        assert df["arbovirosis_aesop_brazil_sd_with_like"].sum() == 2
 
     def test_filter_records_when_column_already_exists(self):
         df = pl.DataFrame(
@@ -168,5 +168,11 @@ class TestFilterRecordsBasedOnDefinition:
 
 class TestCalculateOverlapAmongDefinitions:
     def test_calculate_overlap(self):
+        definitions = find_cases_from("arbovirosis")
+        assert len(definitions) == 3
+        assert overlap_definitions(definitions) == {"A929"}
+
+    def test_return_none_if_definitions_are_not_greater_than_two(self):
         definitions = find_cases_from("covid")
-        assert overlap_definitions(definitions) == 0.25  # %
+        assert len(definitions) == 1
+        assert overlap_definitions(definitions) is None
