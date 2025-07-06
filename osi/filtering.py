@@ -17,6 +17,8 @@ def load_definition(definition_filename, version="v1"):
 
 
 def overlap_definitions(definitions):
+    if len(definitions) < 2:
+        return
     definition_codes = {}
     for definition in definitions:
         json_definition = load_definition(definition)
@@ -29,11 +31,8 @@ def overlap_definitions(definitions):
                     definition_codes[definition].add(
                         value["code"]["code"].replace(".", "").upper()
                     )
-    biggest = len(max(definition_codes.values(), key=len))
-    in_common_codes = len(
-        reduce(lambda acc, cond: acc & cond, definition_codes.values())
-    )
-    return in_common_codes / biggest
+    in_common_codes = reduce(lambda acc, cond: acc & cond, definition_codes.values())
+    return in_common_codes
 
 
 def filter_cases_per_definitions(df, mapping, definitions):
