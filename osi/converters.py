@@ -6,7 +6,7 @@ from pathlib import Path
 import random
 
 from dotenv import load_dotenv
-import requests
+from ollama import chat
 
 from osi.schema import OpenSyndromeCaseDefinitionSchema
 
@@ -108,37 +108,52 @@ def _fill_automatic_fields(machine_readable_definition: dict):
     return machine_readable_definition
 
 
+def _drop_regex_pattern(node: dict):
+    """Recursively drop 'pattern' keys from the schema since it is not supported.
+
+    Issue: https://github.com/ollama/ollama-python/issues/541"""
+    original_node = node.copy()
+    dropped = node.pop("pattern", None)
+    if dropped is not None:
+        logger.warning(f"Dropped 'pattern' from {original_node}")
+    for value in node.values():
+        if isinstance(value, dict):
+            _drop_regex_pattern(value)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    _drop_regex_pattern(item)
+
+
 def generate_machine_readable_format(
     human_readable_definition, model="mistral", language="American English"
 ):
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
-    examples = load_examples(os.getenv("EXAMPLES_DIR"), 10)
+    examples = load_examples(os.getenv("EXAMPLES_DIR"), 3)
     formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
         examples=examples,
         human_readable_definition=human_readable_definition,
         language=language,
     )
 
-    response = requests.post(
-        f"{OLLAMA_BASE_URL}/api/generate",
-        json={
-            "model": model,
-            "prompt": formatted_prompt,
-            "format": OpenSyndromeCaseDefinitionSchema.model_json_schema(),
-            "stream": False,
-            "options": {"temperature": 0},
-        },
+    json_schema = OpenSyndromeCaseDefinitionSchema.model_json_schema()
+    _drop_regex_pattern(json_schema)
+    response = chat(
+        messages=[{"role": "user", "content": formatted_prompt}],
+        model=model,
+        format=json_schema,
+        options={"temperature": 0},
+        stream=False,
     )
-    response.raise_for_status()
-    machine_readable_definition = response.json()["response"]
 
-    machine_readable_definition = json.loads(machine_readable_definition)
+    machine_readable_definition = json.loads(response.message.content)
     if isinstance(machine_readable_definition, list):
         if len(machine_readable_definition) > 1:
             logger.warning("More than one definition generated...")
         machine_readable_definition = machine_readable_definition[0]
+
     return _fill_automatic_fields(machine_readable_definition)
 
 
@@ -151,15 +166,11 @@ def generate_human_readable_format(
     formatted_prompt = PROMPT_TO_HUMAN_READABLE_FORMAT.format(
         language=language, machine_readable_definition=machine_readable_definition
     )
-    response = requests.post(
-        f"{OLLAMA_BASE_URL}/api/generate",
-        json={
-            "model": model,
-            "prompt": formatted_prompt,
-            "stream": False,
-            "options": {"temperature": 0},
-        },
+    response = chat(
+        messages=[{"role": "user", "content": formatted_prompt}],
+        model=model,
+        options={"temperature": 0},
+        stream=False,
     )
-    response.raise_for_status()
-    human_readable_definition = response.json()["response"]
+    human_readable_definition = response.message.content
     return human_readable_definition
