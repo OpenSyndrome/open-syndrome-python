@@ -12,7 +12,6 @@ osi = "osi.cli:main"
 python = "^3.11"
 click = "^8.1.8"
 jsonschema = "^4.23.0"
-requests = "^2.32.3"
 pygments = "^2.19.1"
 python-dotenv = "^1.0.1"
 datamodel-code-generator = "^0.28.1"
@@ -21,14 +20,15 @@ sqlalchemy = "^2.0.41"
 plotly = {extras = ["express"], version = "^6.1.2"}
 numpy = "^2.3.1"
 pyarrow = "^20.0.0"
+ollama = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.1.0"
 pytest = "^8.3.4"
 pytest-mock = "^3.14.0"
-marimo = "^0.14.5"
 plotly = "^6.1.2"
 polars = "^1.31.0"
+marimo = "^0.14.13"
 
 [build-system]
 requires = ["poetry-core"]
