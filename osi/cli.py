@@ -78,7 +78,7 @@ def color_json(json_definition: dict):
 )
 def convert_to_json(validate, model, language, edit, human_readable_definition):
     """
-    Convert human-readable definition to the Open Syndrome format.
+    Convert human-readable definition (TEXT) to the machine-readable format (JSON).
 
     If the --validate flag is passed, the JSON file will be validated against the schema.
     """
@@ -116,6 +116,7 @@ def convert_to_json(validate, model, language, edit, human_readable_definition):
     default="American English",
 )
 def convert_to_text(json_file, model, language):
+    """Convert a machine-readable format (JSON) to a human-readable format (TEXT)."""
     machine_readable_definition = json.loads(Path(json_file).read_text())
     text = generate_human_readable_format(machine_readable_definition, model, language)
     click.echo(click.style(text, fg="green"))
