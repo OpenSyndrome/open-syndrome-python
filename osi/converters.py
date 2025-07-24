@@ -58,15 +58,15 @@ Expected Output Format:
 - No additional professional judgment or external information
 """
 PROMPT_TO_HUMAN_READABLE_FORMAT = """
-You are an expert in creating standardized case definition JSONs for medical syndromes.
-Generate a human-readable definition from the provided machine-readable JSON using only
-the criteria and symptoms mentioned in the JSON.
+You are an public health expert in creating standardized case definition.
+Generate a human-readable definition from the provided JSON using only
+the information provided there.
 
-Expected Output Format:
-- Use {language} language
+Expected output format:
+- Text in narrative form
 - Clear, concise, and easy to understand text
 - No additional professional judgment or external information
-- Structured JSON output
+- Write in {language}
 
 {machine_readable_definition}
 """
@@ -157,6 +157,16 @@ def generate_machine_readable_format(
     return _fill_automatic_fields(machine_readable_definition)
 
 
+def _exclude_metadata_fields(definition: dict):
+    """Exclude metadata fields from the definition."""
+    definition_fields = [
+        "inclusion_criteria",
+        "exclusion_criteria",
+        "target_public_health_threats",
+    ]
+    return {key: value for key, value in definition.items() if key in definition_fields}
+
+
 def generate_human_readable_format(
     machine_readable_definition, model="mistral", language="American English"
 ):
@@ -164,7 +174,10 @@ def generate_human_readable_format(
         raise ValueError("Machine-readable definition cannot be empty.")
 
     formatted_prompt = PROMPT_TO_HUMAN_READABLE_FORMAT.format(
-        language=language, machine_readable_definition=machine_readable_definition
+        language=language,
+        machine_readable_definition=_exclude_metadata_fields(
+            machine_readable_definition
+        ),
     )
     response = chat(
         messages=[{"role": "user", "content": formatted_prompt}],
