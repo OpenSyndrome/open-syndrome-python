@@ -87,7 +87,10 @@ def _add_first_level_required_fields(definition: dict):
     return definition
 
 
-def _fill_automatic_fields(machine_readable_definition: dict):
+def _fill_automatic_fields(
+    machine_readable_definition: dict, human_readable_definition: str
+):
+    machine_readable_definition["human_readable_definition"] = human_readable_definition
     machine_readable_definition["published_in"] = (
         "https://opensyndrome.org"  # TODO assemble url based on repo
     )
@@ -154,7 +157,9 @@ def generate_machine_readable_format(
             logger.warning("More than one definition generated...")
         machine_readable_definition = machine_readable_definition[0]
 
-    return _fill_automatic_fields(machine_readable_definition)
+    return _fill_automatic_fields(
+        machine_readable_definition, human_readable_definition
+    )
 
 
 def _exclude_metadata_fields(definition: dict):
