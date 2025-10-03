@@ -4,9 +4,9 @@
 
 ## Installation
 
-You can install it from PyPi or from Docker.
+You can install it from PyPI or from Docker.
 
-From PyPi, install the package with `pip install osi`.
+From PyPi, install the package with `pip install opensyndrome`. Then run it with `osi`.
 
 From Docker, you can run the following command to build the image, tagged `osi`:
 
@@ -35,6 +35,15 @@ docker run --name osi-cli -it osi
 ```
 
 ## Usage
+
+First, download the schema and definitions in order to work with the CLI locally.
+
+```bash
+osi download schema
+osi download definitions
+```
+
+The files will be placed in the folder `.open_syndrome` in `$HOME`.
 
 ### Convert a human-readable syndrome definition to a machine-readable JSON
 
@@ -76,7 +85,7 @@ To get started with development, you need to have [Poetry](https://python-poetry
 ### Install dependencies
 
 ```bash
-poetry install
+uv sync
 ```
 
 ### Generate Ollama-compatible JSON
