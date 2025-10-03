@@ -11,11 +11,9 @@ jobs:
   pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    # Environment and permissions trusted publishing.
     environment:
-      # Create this environment in the GitHub repository under Settings -> Environments
       name: release
-      url: https://pypi.org/p/osi
+      url: https://pypi.org/p/opensyndrome
     permissions:
       contents: read
       id-token: write
