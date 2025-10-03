@@ -9,6 +9,7 @@ from osi.converters import (
     generate_machine_readable_format,
     generate_human_readable_format,
 )
+from osi.filtering import get_schema_filepath, get_definition_dir
 from osi.validators import validate_machine_readable_format
 
 
@@ -39,7 +40,8 @@ def validate_json(json_file, schema_file):
     Validate a JSON file against a JSON Schema.
 
     JSON_FILE: Path to the JSON file to validate.
-    SCHEMA_FILE: Path to the JSON Schema file.
+    SCHEMA_FILE: Path to the JSON Schema file. If not passed, it will use
+    the downloaded schema from GitHub repo.
     """
     validate_machine_readable_format_with_style(json_file, schema_file)
 
@@ -120,6 +122,28 @@ def convert_to_text(json_file, model, language):
     machine_readable_definition = json.loads(Path(json_file).read_text())
     text = generate_human_readable_format(machine_readable_definition, model, language)
     click.echo(click.style(text, fg="green"))
+
+
+@cli.command("download")
+@click.argument("entity")
+def download_entity(entity):
+    match entity:
+        case "schema":
+            result = get_schema_filepath()
+        case "definitions":
+            result = get_definition_dir()
+        case _:
+            result = None
+
+    if not result:
+        click.echo(
+            click.style(
+                f"Invalid entity: {entity}. Expected: `schema` or `definitions`.",
+                fg="red",
+            )
+        )
+    else:
+        click.echo(click.style(f"{entity} available at: {result}", fg="green"))
 
 
 def main():
