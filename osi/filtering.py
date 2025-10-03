@@ -4,14 +4,28 @@ from pathlib import Path
 import polars as pl
 
 
-DEFINITIONS_DIR = Path("tests/definitions/")
+OPEN_SYNDROME_DIR = Path.home() / ".open_syndrome"
+OPEN_SYNDROME_DIR.mkdir(parents=True, exist_ok=True)
+DEFINITIONS_DIR = OPEN_SYNDROME_DIR / "definitions"
+DEFINITIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def download_schema_and_definitions():
+    """Download schema and definitions from GitHub repos."""
+    pass
+
+
+def get_definition_dir():
+    if not any(DEFINITIONS_DIR.iterdir()):
+        download_schema_and_definitions()
+    return DEFINITIONS_DIR
 
 
 def load_definition(definition_filename, version="v1"):
     letter_dir = definition_filename[0].lower()
     return json.loads(
         (
-            DEFINITIONS_DIR / f"{version}/{letter_dir}/{definition_filename}.json"
+            get_definition_dir() / f"{version}/{letter_dir}/{definition_filename}.json"
         ).read_text()
     )
 
@@ -44,7 +58,7 @@ def filter_cases_per_definitions(df, mapping, definitions):
 
 def find_cases_from(term, version="v1"):  # TODO rename
     definitions = []
-    for file_ in (DEFINITIONS_DIR / version).glob("**/*.json"):
+    for file_ in (get_definition_dir() / version).glob("**/*.json"):
         if term.lower() in file_.name.lower():
             definitions.append(file_.name.replace(".json", ""))
     return definitions

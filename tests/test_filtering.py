@@ -1,4 +1,11 @@
-from osi.filtering import filter_cases, find_cases_from, overlap_definitions
+from unittest import mock
+
+from osi.filtering import (
+    filter_cases,
+    find_cases_from,
+    overlap_definitions,
+    get_definition_dir,
+)
 import polars as pl
 
 
@@ -176,3 +183,25 @@ class TestCalculateOverlapAmongDefinitions:
         definitions = find_cases_from("covid")
         assert len(definitions) == 1
         assert overlap_definitions(definitions) is None
+
+
+@mock.patch("osi.filtering.DEFINITIONS_DIR")
+@mock.patch("osi.filtering.download_schema_and_definitions")
+class TestGetDefinitionsDir:
+    def test_return_definitions_dir_if_not_empty(self, mock_download, mock_dir):
+        mock_dir.iterdir.return_value = ["schema.json", "v1/"]
+
+        get_definition_dir()
+
+        assert mock_dir.iterdir.called
+        assert mock_download.called is False
+
+    def test_download_definitions_and_schema_from_repos_if_dir_is_empty(
+        self, mock_download, mock_dir
+    ):
+        mock_dir.iterdir.return_value = []
+
+        get_definition_dir()
+
+        assert mock_dir.iterdir.called
+        assert mock_download.called is True
