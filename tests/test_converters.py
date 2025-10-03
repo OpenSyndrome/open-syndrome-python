@@ -28,13 +28,12 @@ class TestAddFirstLevelRequiredFields:
 class TestLoadExamples:
     def test_load_examples(self):
         examples_dir = "tests/definitions/"
-        expected_break_lines = 11
-        expected_start_lines = 13
+        expected_number_of_definitions = 11
 
         examples = load_examples(examples_dir)
 
-        assert examples.count("\n") == expected_break_lines
-        assert examples.count("- ") == expected_start_lines
+        assert examples.count('"inclusion_criteria"') == expected_number_of_definitions
+        assert examples.count("- {") == expected_number_of_definitions
 
     @pytest.mark.parametrize("k", [1, 2, 4])
     def test_load_examples_with_k_random_samples(self, k):
@@ -42,4 +41,4 @@ class TestLoadExamples:
 
         examples = load_examples(examples_dir, k)
 
-        assert examples.count("- ") == k
+        assert examples.count("- {") == k
