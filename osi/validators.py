@@ -1,16 +1,17 @@
 import json
-import os
 from pathlib import Path
 
 import jsonschema
 from dotenv import load_dotenv
+
+from osi.filtering import get_schema_filepath
 
 load_dotenv()
 
 
 def validate_machine_readable_format(machine_readable_definition, schema_file=None):
     if not schema_file:
-        schema_file = os.getenv("SCHEMA_FILE")
+        schema_file = get_schema_filepath()
     if not isinstance(machine_readable_definition, dict):
         try:
             json_data = json.loads(Path(machine_readable_definition).read_text())

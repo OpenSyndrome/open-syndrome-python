@@ -8,6 +8,7 @@ import random
 from dotenv import load_dotenv
 from ollama import chat
 
+from osi.filtering import get_schema_filepath
 from osi.schema import OpenSyndromeCaseDefinitionSchema
 
 load_dotenv()
@@ -80,7 +81,7 @@ def _add_first_level_required_fields(definition: dict):
         "object": {},
         "integer": 0,
     }
-    schema = json.loads(Path(os.getenv("SCHEMA_FILE")).read_text())
+    schema = json.loads(get_schema_filepath().read_text())
     missing_fields = set(schema["required"]) - set(definition.keys())
     for field in missing_fields:
         definition[field] = default_values.get(schema["properties"][field]["type"])
