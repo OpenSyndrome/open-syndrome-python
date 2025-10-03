@@ -22,9 +22,24 @@ def download_schema():
     return SCHEMA_DIR
 
 
-def download_definitions():
+def download_definitions(url=None, current_path=None):
     """Download definitions from GitHub repos."""
-    pass
+    if url is None:
+        url = "https://api.github.com/repos/OpenSyndrome/definitions/contents/definitions/v1?ref=main"
+    response = requests.get(url)
+    response.raise_for_status()
+
+    for item in response.json():
+        if item["type"] == "file":
+            response_file = requests.get(item["download_url"])
+            definition_filepath = current_path / item["name"]
+            definition_filepath.write_bytes(response_file.content)
+
+        elif item["type"] == "dir":
+            print(item["path"])
+            local_dir = DEFINITIONS_DIR / Path(item["path"]).parts[-1]
+            local_dir.mkdir(parents=True, exist_ok=True)
+            download_definitions(item["url"], local_dir)
 
 
 def get_definition_dir():

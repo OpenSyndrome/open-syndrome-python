@@ -12,7 +12,6 @@ def _():
     import marimo as mo
     import json
     from pathlib import Path
-    import os
 
     from flatten_json import flatten
     import polars as pl
@@ -23,6 +22,7 @@ def _():
         filter_cases_per_definitions,
         load_definition,
         overlap_definitions,
+        get_definition_dir,
     )
 
     return (
@@ -34,9 +34,9 @@ def _():
         load_definition,
         load_dotenv,
         mo,
-        os,
         overlap_definitions,
         pl,
+        get_definition_dir,
     )
 
 
@@ -203,10 +203,10 @@ def _(json, mapping_form, mo):
 
 
 @app.cell
-def _(Path, os):
+def _(get_definition_dir):
     definition_options = {
         filepath.name.replace(".json", ""): filepath
-        for filepath in Path(os.getenv("PROTOTYPE_DEFINITIONS_DIR")).glob(
+        for filepath in get_definition_dir().glob(
             "**/*.json"
         )  # TODO fetch from a remote URL
     }
