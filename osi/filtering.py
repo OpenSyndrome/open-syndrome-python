@@ -2,22 +2,34 @@ import json
 from functools import reduce
 from pathlib import Path
 import polars as pl
+import requests
 
 
-OPEN_SYNDROME_DIR = Path.home() / ".open_syndrome"
+OPEN_SYNDROME_VERSION = "v1"
+OPEN_SYNDROME_DIR = Path.home() / ".open_syndrome" / OPEN_SYNDROME_VERSION
 OPEN_SYNDROME_DIR.mkdir(parents=True, exist_ok=True)
 DEFINITIONS_DIR = OPEN_SYNDROME_DIR / "definitions"
 DEFINITIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def download_schema_and_definitions():
-    """Download schema and definitions from GitHub repos."""
+def download_schema():
+    schema_response = requests.get(
+        "https://raw.githubusercontent.com/OpenSyndrome/schema/refs/heads/main/schemas/"
+        f"{OPEN_SYNDROME_VERSION}/schema.json"
+    )
+    schema_filepath = OPEN_SYNDROME_DIR / "schema.json"
+    schema_filepath.write_text(json.dumps(schema_response.json()))
+    return schema_filepath
+
+
+def download_definitions():
+    """Download definitions from GitHub repos."""
     pass
 
 
 def get_definition_dir():
     if not any(DEFINITIONS_DIR.iterdir()):
-        download_schema_and_definitions()
+        download_definitions()
     return DEFINITIONS_DIR
 
 

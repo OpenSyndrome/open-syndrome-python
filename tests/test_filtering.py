@@ -1,10 +1,12 @@
 from unittest import mock
+from unittest.mock import Mock, call
 
 from osi.filtering import (
     filter_cases,
     find_cases_from,
     overlap_definitions,
     get_definition_dir,
+    download_schema,
 )
 import polars as pl
 
@@ -205,3 +207,19 @@ class TestGetDefinitionsDir:
 
         assert mock_dir.iterdir.called
         assert mock_download.called is True
+
+
+class TestDownloadSchema:
+    @mock.patch("osi.filtering.OPEN_SYNDROME_DIR")
+    @mock.patch("osi.filtering.requests")
+    def test_download_schema_from_github_repo(self, mock_requests, mock_dir):
+        response = Mock()
+        response.json.return_value = {"version": "1.0.0"}  # fake schema
+        mock_requests.get.return_value = response
+
+        download_schema()
+
+        assert mock_requests.get.called
+        assert (
+            call.__truediv__().write_text('{"version": "1.0.0"}') in mock_dir.mock_calls
+        )
