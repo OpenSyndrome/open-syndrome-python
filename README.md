@@ -11,13 +11,13 @@ From PyPi, install the package with `pip install opensyndrome`. Then run it with
 From Docker, you can run the following command to build the image, tagged `osi`:
 
 ```bash
-docker build -t osi .
+docker build -t opensyndrome .
 ```
 
 Run the container interactively, removing it when it exits
 
 ```bash
-docker run --rm osi
+docker run --rm opensyndrome
 ```
 
 To read a `.env` file, mount it:
@@ -25,13 +25,13 @@ To read a `.env` file, mount it:
 ```bash
 docker run --rm -it \
   -v "$(pwd)/.env:/app/.env:ro" \
-  osi
+  opensyndrome
 ```
 
 To name the container and keep it around:
 
 ```bash
-docker run --name osi-cli -it osi
+docker run --name opensyndrome-cli -it opensyndrome
 ```
 
 ## Usage

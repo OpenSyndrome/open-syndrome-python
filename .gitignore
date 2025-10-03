@@ -173,7 +173,7 @@ cython_debug/
 # temporary
 schema.json
 ollama_schema.json
-osi/to_be_updated__schema.py
+opensyndrome/to_be_updated__schema.py
 
 # data
 *.csv

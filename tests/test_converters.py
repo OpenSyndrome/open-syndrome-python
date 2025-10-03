@@ -1,6 +1,6 @@
 import pytest
 
-from osi.converters import (
+from opensyndrome.converters import (
     _add_first_level_required_fields,
     load_examples,
     _fill_automatic_fields,
@@ -17,7 +17,7 @@ class TestAddFirstLevelRequiredFields:
             },
             "required": ["name"],
         }
-        mocker.patch("osi.converters.json.loads", return_value=schema)
+        mocker.patch("opensyndrome.converters.json.loads", return_value=schema)
         instance = {"address": "Karl-Marx-Str. 1, 10178 Berlin, Germany"}
         expected = {
             "address": "Karl-Marx-Str. 1, 10178 Berlin, Germany",
@@ -58,7 +58,7 @@ class TestFillAutomaticFields:
             },
             "required": ["a-nice-name"],
         }
-        mocker.patch("osi.converters.json.loads", return_value=schema)
+        mocker.patch("opensyndrome.converters.json.loads", return_value=schema)
         human_readable_definition = "Fiber and rash"
         machine_readable_definition = {
             "title": "Sarampo",

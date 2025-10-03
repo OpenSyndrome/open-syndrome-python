@@ -1,5 +1,5 @@
 [project]
-name = "osi"
+name = "opensyndrome"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ana Paula Gomes", email = "apgomes88@gmail.com" }]
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-osi = "osi.cli:main"
+osi = "opensyndrome.cli:main"
 
 [dependency-groups]
 dev = [

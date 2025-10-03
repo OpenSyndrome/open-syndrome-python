@@ -4,7 +4,7 @@ from pathlib import Path
 import jsonschema
 from dotenv import load_dotenv
 
-from osi.filtering import get_schema_filepath
+from opensyndrome.filtering import get_schema_filepath
 
 load_dotenv()
 

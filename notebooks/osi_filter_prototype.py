@@ -18,7 +18,7 @@ def _():
     import plotly.graph_objects as go
     from dotenv import load_dotenv
 
-    from osi.filtering import (
+    from opensyndrome.filtering import (
         filter_cases_per_definitions,
         load_definition,
         overlap_definitions,

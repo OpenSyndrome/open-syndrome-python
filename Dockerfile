@@ -8,4 +8,4 @@ COPY . /app
 
 RUN poetry config virtualenvs.create false && poetry install
 
-ENTRYPOINT ["poetry", "run", "osi"]
+ENTRYPOINT ["uv", "run", "osi"]

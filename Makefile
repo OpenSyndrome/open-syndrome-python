@@ -17,4 +17,4 @@ ollama_schema:
 					   --use-unique-items-as-set \
 					   --use-default \
 					   --input $(SCHEMA_FILE) \
-					   --output osi/to_be_updated__schema.py
+					   --output opensyndrome/to_be_updated__schema.py

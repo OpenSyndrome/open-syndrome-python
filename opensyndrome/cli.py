@@ -5,12 +5,12 @@ from pygments import highlight, lexers, formatters
 import jsonschema
 import click
 
-from osi.converters import (
+from opensyndrome.converters import (
     generate_machine_readable_format,
     generate_human_readable_format,
 )
-from osi.filtering import get_schema_filepath, get_definition_dir
-from osi.validators import validate_machine_readable_format
+from opensyndrome.filtering import get_schema_filepath, get_definition_dir
+from opensyndrome.validators import validate_machine_readable_format
 
 
 @click.group()

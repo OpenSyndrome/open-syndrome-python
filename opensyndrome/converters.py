@@ -8,8 +8,8 @@ import random
 from dotenv import load_dotenv
 from ollama import chat
 
-from osi.filtering import get_schema_filepath
-from osi.schema import OpenSyndromeCaseDefinitionSchema
+from opensyndrome.filtering import get_schema_filepath
+from opensyndrome.schema import OpenSyndromeCaseDefinitionSchema
 
 load_dotenv()
 logger = logging.getLogger(__name__)
