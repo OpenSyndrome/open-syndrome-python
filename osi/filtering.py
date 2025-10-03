@@ -54,12 +54,10 @@ def get_schema_filepath():
     return SCHEMA_DIR
 
 
-def load_definition(definition_filename, version="v1"):
+def load_definition(definition_filename):
     letter_dir = definition_filename[0].lower()
     return json.loads(
-        (
-            get_definition_dir() / f"{version}/{letter_dir}/{definition_filename}.json"
-        ).read_text()
+        (get_definition_dir() / f"{letter_dir}/{definition_filename}.json").read_text()
     )
 
 
@@ -89,21 +87,21 @@ def filter_cases_per_definitions(df, mapping, definitions):
     return _df_filtered
 
 
-def find_cases_from(term, version="v1"):  # TODO rename
+def find_cases_from(term):  # TODO rename
     definitions = []
-    for file_ in (get_definition_dir() / version).glob("**/*.json"):
+    for file_ in get_definition_dir().glob("**/*.json"):
         if term.lower() in file_.name.lower():
             definitions.append(file_.name.replace(".json", ""))
     return definitions
 
 
-def filter_cases(df, mapping, definition_filename, version="v1"):
+def filter_cases(df, mapping, definition_filename):
     """Filter records in a DataFrame based on a definition file.
 
     The logical operator is not taking into account because the rows are seeing as independent.
     A new column is added to the DataFrame with the name of the definition file.
     """
-    definition = load_definition(definition_filename, version)
+    definition = load_definition(definition_filename)
     inclusion_criteria = definition.get("inclusion_criteria", [])
     # TODO add exclusion criteria
     if inclusion_criteria:

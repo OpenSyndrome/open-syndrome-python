@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import mock
 from unittest.mock import Mock, call
 
@@ -13,8 +14,13 @@ from osi.filtering import (
 import polars as pl
 
 
+@mock.patch(
+    "osi.filtering.get_definition_dir", return_value=Path("tests/definitions/v1")
+)
 class TestFilterRecordsBasedOnDefinition:
-    def test_filter_records_when_the_same_column_is_targeted(self):
+    def test_filter_records_when_the_same_column_is_targeted(
+        self, mock_definitions_dir
+    ):
         df = pl.DataFrame(
             {
                 "week": [1, 1, 1, 2, 2, 2, 1],
@@ -48,7 +54,9 @@ class TestFilterRecordsBasedOnDefinition:
         assert "arbovirosis_paraguay_sd" in df.columns
         assert df["arbovirosis_paraguay_sd"].sum() == 3
 
-    def test_filter_records_when_multiple_columns_are_targeted(self):
+    def test_filter_records_when_multiple_columns_are_targeted(
+        self, mock_definitions_dir
+    ):
         df = pl.DataFrame(
             {
                 "week": [1, 1, 1, 2, 2, 2, 1],
@@ -93,7 +101,7 @@ class TestFilterRecordsBasedOnDefinition:
         assert "arbovirosis_aesop_brazil_sd" in df.columns
         assert df["arbovirosis_aesop_brazil_sd"].sum() == 4
 
-    def test_filter_records_using_like_condition(self):
+    def test_filter_records_using_like_condition(self, mock_definitions_dir):
         df = pl.DataFrame(
             {
                 "week": [1, 1, 1, 2, 2, 2, 1],
@@ -136,7 +144,7 @@ class TestFilterRecordsBasedOnDefinition:
         assert "arbovirosis_aesop_brazil_sd_with_like" in df.columns
         assert df["arbovirosis_aesop_brazil_sd_with_like"].sum() == 2
 
-    def test_filter_records_when_column_already_exists(self):
+    def test_filter_records_when_column_already_exists(self, mock_definitions_dir):
         df = pl.DataFrame(
             {
                 "week": [1, 1, 1, 2, 2, 2, 1],
@@ -177,13 +185,18 @@ class TestFilterRecordsBasedOnDefinition:
         assert "arbovirosis_paraguay_sd" in df_filtered_again.columns
 
 
+@mock.patch(
+    "osi.filtering.get_definition_dir", return_value=Path("tests/definitions/v1")
+)
 class TestCalculateOverlapAmongDefinitions:
-    def test_calculate_overlap(self):
+    def test_calculate_overlap(self, mock_definitions_dir):
         definitions = find_cases_from("arbovirosis")
         assert len(definitions) == 3
         assert overlap_definitions(definitions) == {"A929"}
 
-    def test_return_none_if_definitions_are_not_greater_than_two(self):
+    def test_return_none_if_definitions_are_not_greater_than_two(
+        self, mock_definitions_dir
+    ):
         definitions = find_cases_from("covid")
         assert len(definitions) == 1
         assert overlap_definitions(definitions) is None
