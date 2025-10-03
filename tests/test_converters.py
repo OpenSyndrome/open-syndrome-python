@@ -24,7 +24,7 @@ class TestAddFirstLevelRequiredFields:
             "name": "",
         }
 
-        updated_instance = _add_first_level_required_fields(instance)
+        updated_instance = _add_first_level_required_fields(schema, instance)
 
         assert updated_instance == expected
 
@@ -49,28 +49,30 @@ class TestLoadExamples:
 
 
 class TestFillAutomaticFields:
-    def test_check_required_fields(self):
+    def test_check_required_fields(self, mocker):
+        schema = {
+            "type": "object",
+            "properties": {
+                "a-nice-name": {"type": "string"},
+                "address": {"type": "string"},
+            },
+            "required": ["a-nice-name"],
+        }
+        mocker.patch("osi.converters.json.loads", return_value=schema)
         human_readable_definition = "Fiber and rash"
         machine_readable_definition = {
             "title": "Sarampo",
         }
         expected_keys = [
-            "category",
-            "definition_type",
+            "a-nice-name",
             "human_readable_definition",
-            "inclusion_criteria",
-            "language",
-            "location",
             "open_syndrome_version",
-            "organization",
             "published_at",
             "published_by",
             "published_in",
             "references",
-            "scope",
             "status",
             "title",
-            "version",
         ]
 
         definition_with_automatic_fields = _fill_automatic_fields(

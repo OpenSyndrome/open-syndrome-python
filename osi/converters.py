@@ -73,7 +73,7 @@ Expected output format:
 """
 
 
-def _add_first_level_required_fields(definition: dict):
+def _add_first_level_required_fields(schema: dict, definition: dict):
     """Add mandatory fields and empty values as placeholders."""
     default_values = {
         "string": "",
@@ -81,7 +81,6 @@ def _add_first_level_required_fields(definition: dict):
         "object": {},
         "integer": 0,
     }
-    schema = json.loads(get_schema_filepath().read_text())
     missing_fields = set(schema["required"]) - set(definition.keys())
     for field in missing_fields:
         definition[field] = default_values.get(schema["properties"][field]["type"])
@@ -106,8 +105,9 @@ def _fill_automatic_fields(
     machine_readable_definition["references"] = [
         {"citation": "", "url": ""}
     ]  # to be filled by the user
+    schema = json.loads(get_schema_filepath().read_text())
     machine_readable_definition = _add_first_level_required_fields(
-        machine_readable_definition
+        schema, machine_readable_definition
     )
     return machine_readable_definition
 
