@@ -92,7 +92,7 @@ def _fill_automatic_fields(
 ):
     machine_readable_definition["human_readable_definition"] = human_readable_definition
     machine_readable_definition["published_in"] = (
-        "https://opensyndrome.org"  # TODO assemble url based on repo
+        "https://opensyndrome.org/definitions/<replace-url>"
     )
     machine_readable_definition["published_at"] = str(
         datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
