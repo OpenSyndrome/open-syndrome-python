@@ -1,10 +1,12 @@
 # open-syndrome-python
 
+[![Test](https://github.com/OpenSyndrome/open-syndrome-python/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenSyndrome/open-syndrome-python/actions/workflows/ci.yml)
+
 ## Installation
 
 You can install it from PyPi or from Docker.
 
-From PyPi, install the package with `pip install osi-python`.
+From PyPi, install the package with `pip install osi`.
 
 From Docker, you can run the following command to build the image, tagged `osi`:
 
@@ -96,12 +98,12 @@ If you find this repository helpful, feel free to cite our publication: The Open
 
 ```
 @misc{ferreira2025opensyndromedefinition,
-      title={The Open Syndrome Definition}, 
+      title={The Open Syndrome Definition},
       author={Ana Paula Gomes Ferreira and Aleksandar Anžel and Izabel Oliva Marcilio de Souza and Helen Hughes and Alex J Elliot and Jude Dzevela Kong and Madlen Schranz and Alexander Ullrich and Georges Hattab},
       year={2025},
       eprint={2509.25434},
       archivePrefix={arXiv},
       primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2509.25434}, 
+      url={https://arxiv.org/abs/2509.25434},
 }
 ```
