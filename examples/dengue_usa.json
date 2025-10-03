@@ -1,0 +1,124 @@
+{
+  "title": "Open Syndrome Dengue",
+  "description": "Case definition for dengue surveillance based on chief complaints and multiple diagnostic coding systems",
+  "scope": "broad",
+  "category": "suspected",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-01-29T12:00:00Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "location": "United States",
+  "language": "English",
+  "organization": "CDC",
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "diagnosis",
+          "name": "Dengue in chief complaint",
+          "description": "Dengue word in chief complaint field",
+          "operator": "regex",
+          "regex_pattern": "dengue",
+          "regex_flags": "i"
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue fever",
+          "description": "Dengue fever (A90) or Dengue hemorrhagic fever (A91)",
+          "code": {
+            "system": "ICD-10",
+            "code": "A90"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue hemorrhagic fever",
+          "code": {
+            "system": "ICD-10",
+            "code": "A91"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue",
+          "code": {
+            "system": "ICD-9",
+            "code": "061",
+            "display": "Dengue"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue",
+          "code": {
+            "system": "SNOMED-CT",
+            "code": "38362002",
+            "display": "Dengue"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Severe Dengue",
+          "code": {
+            "system": "SNOMED-CT",
+            "code": "20927009",
+            "display": "Severe Dengue"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Dengue shock syndrome",
+          "code": {
+            "system": "SNOMED-CT",
+            "code": "409671005",
+            "display": "Dengue shock syndrome"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Myelitis caused by Dengue virus",
+          "code": {
+            "system": "SNOMED-CT",
+            "code": "866057003",
+            "display": "Myelitis caused by Dengue virus"
+          }
+        },
+        {
+          "type": "diagnosis",
+          "name": "Encephalitis caused by Dengue virus",
+          "code": {
+            "system": "SNOMED-CT",
+            "code": "1163101003",
+            "display": "Encephalitis caused by Dengue virus"
+          }
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "citation": "Dengue Case Definition v1",
+      "url": "https://knowledgerepository.syndromicsurveillance.org/dengue-v1"
+    }
+  ],
+  "notes": [
+    "Case definition based on Chief Complaint Discharge Diagnosis (CCDD) parsed field",
+    "No exclusion terms or codes are used in this query"
+  ],
+  "status": "draft",
+  "human_readable_definition": "",
+  "target_public_health_threats": [
+    "Dengue"
+  ],
+  "keywords": [
+    "Dengue",
+    "North America",
+    "Arbovirus"
+  ],
+  "definition_type": "case_definition"
+}

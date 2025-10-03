@@ -135,7 +135,7 @@ def generate_machine_readable_format(
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
-    examples = load_examples(os.getenv("EXAMPLES_DIR"), 3)
+    examples = load_examples("examples/", 3)
     formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
         examples=examples,
         human_readable_definition=human_readable_definition,

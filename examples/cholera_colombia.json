@@ -1,0 +1,52 @@
+{
+  "title": "Open Syndrome Confirmed Case of Cholera",
+  "description": "Laboratory confirmation with positive fecal culture for toxigenic Vibrio cholerae O1 or O139",
+  "scope": "specific",
+  "category": "confirmed",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-02-27T16:16:26Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "location": "Colombia",
+  "language": "English",
+  "organization": "Instituto Nacional de Salud",
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "name": "Confirmation by Laboratory with Positive Culture of Stool",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "diagnostic_test",
+          "name": "Confirmation by Laboratory with Positive Culture of Stool for Vibrio cholerae O1"
+        },
+        {
+          "type": "diagnostic_test",
+          "name": "Confirmation by Laboratory with Positive Culture of Stool for O139 Toxigenic"
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "citation": "Colombia. Instituto Nacional de Salud. Protocolo de Vigilancia\nen Salud Pública de Cólera. versión 4. [Internet] 2022.\nhttps://doi.org/10.33610/infoeventos.5",
+      "url": "https://www.ins.gov.co/buscador-eventos/Lineamientos/Pro_C%C3%B3lera.pdf"
+    }
+  ],
+  "notes": [
+    "Human-readable definition was automatically translated from Spanish to English."
+  ],
+  "status": "draft",
+  "human_readable_definition": "This is a suspect case that meets any of the following criteria.\n   Confirmation by laboratory with positive stool culture for toxigenic Vibrio cholerae O1 or O139.\n   Confirmation by epidemiological link:\n    • Individual who fits the definition of a suspect case, and has history of contact with a confirmed cholera patient within a period of five days\n    • or a history of active circulation of V. cholerae serotype O1 or O139 toxigenic in the workplace or residence of the case.\n   An area of active circulation is considered one where toxigenic Vibrio cholerae O1 or O139 has been isolated from biological or environmental samples (water, food or food remains).",
+  "target_public_health_threats": [
+    "Cholera"
+  ],
+  "keywords": [
+    "Latin America",
+    "Cholera"
+  ],
+  "definition_type": "case_definition"
+}

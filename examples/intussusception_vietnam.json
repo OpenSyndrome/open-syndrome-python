@@ -1,0 +1,277 @@
+{
+  "title": "Open Syndrome Acute Intussusception in infants",
+  "description": "Case definition for acute intussusception in infants",
+  "scope": "specific",
+  "category": "suspected",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-01-29T12:00:00Z",
+  "published_by": [
+    "Open Syndrome Initiative"
+  ],
+  "location": "Vietnam",
+  "language": "English",
+  "organization": "Vietnam Ministry of Health",
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "criterion",
+          "logical_operator": "AT_LEAST",
+          "logical_operator_arguments": [
+            2
+          ],
+          "values": [
+            {
+              "type": "criterion",
+              "name": "Evidence of intestinal obstruction",
+              "logical_operator": "AND",
+              "values": [
+                {
+                  "type": "symptom",
+                  "name": "bile-stained vomiting"
+                },
+                {
+                  "type": "criterion",
+                  "logical_operator": "OR",
+                  "values": [
+                    {
+                      "type": "symptom",
+                      "name": "examination findings of acute abdominal distension and abnormal or absent bowel sounds"
+                    },
+                    {
+                      "type": "symptom",
+                      "name": "fluid levels and dilated bowel loops on plain abdominal radiograph"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "criterion",
+              "name": "Features of intestinal invagination",
+              "logical_operator": "AT_LEAST",
+              "logical_operator_arguments": [
+                1
+              ],
+              "values": [
+                {
+                  "type": "symptom",
+                  "name": "abdominal mass"
+                },
+                {
+                  "type": "symptom",
+                  "name": "rectal mass"
+                },
+                {
+                  "type": "symptom",
+                  "name": "intestinal prolapse"
+                },
+                {
+                  "type": "diagnostic_test",
+                  "name": "plain abdominal radiograph showing a visible intussusceptum or soft tissue mass"
+                },
+                {
+                  "type": "diagnostic_test",
+                  "name": "abdominal ultrasound showing a visible intussusceptum or soft tissue mass"
+                },
+                {
+                  "type": "diagnostic_test",
+                  "name": "abdominal CT scan showing a visible intussusceptum or soft tissue mass"
+                }
+              ]
+            },
+            {
+              "type": "criterion",
+              "name": "Evidence of intestinal vascular compromise",
+              "logical_operator": "OR",
+              "values": [
+                {
+                  "type": "symptom",
+                  "name": "blood per rectum"
+                },
+                {
+                  "type": "symptom",
+                  "name": "stool containing red currant jelly material"
+                },
+                {
+                  "type": "symptom",
+                  "name": "blood on rectal examination"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "criterion",
+          "logical_operator": "AND",
+          "values": [
+            {
+              "type": "criterion",
+              "logical_operator": "AT_LEAST",
+              "logical_operator_arguments": [
+                1
+              ],
+              "values": [
+                {
+                  "type": "criterion",
+                  "name": "Evidence of intestinal obstruction",
+                  "logical_operator": "AND",
+                  "values": [
+                    {
+                      "type": "symptom",
+                      "name": "bile-stained vomiting"
+                    },
+                    {
+                      "type": "criterion",
+                      "logical_operator": "OR",
+                      "values": [
+                        {
+                          "type": "symptom",
+                          "name": "examination findings of acute abdominal distension and abnormal or absent bowel sounds"
+                        },
+                        {
+                          "type": "symptom",
+                          "name": "fluid levels and dilated bowel loops on plain abdominal radiograph"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "criterion",
+                  "name": "Features of intestinal invagination",
+                  "logical_operator": "AT_LEAST",
+                  "logical_operator_arguments": [
+                    1
+                  ],
+                  "values": [
+                    {
+                      "type": "symptom",
+                      "name": "abdominal mass"
+                    },
+                    {
+                      "type": "symptom",
+                      "name": "rectal mass"
+                    },
+                    {
+                      "type": "symptom",
+                      "name": "intestinal prolapse"
+                    },
+                    {
+                      "type": "diagnostic_test",
+                      "name": "plain abdominal radiograph showing a visible intussusceptum or soft tissue mass"
+                    },
+                    {
+                      "type": "diagnostic_test",
+                      "name": "abdominal ultrasound showing a visible intussusceptum or soft tissue mass"
+                    },
+                    {
+                      "type": "diagnostic_test",
+                      "name": "abdominal CT scan showing a visible intussusceptum or soft tissue mass"
+                    }
+                  ]
+                },
+                {
+                  "type": "criterion",
+                  "name": "Evidence of intestinal vascular compromise",
+                  "logical_operator": "OR",
+                  "values": [
+                    {
+                      "type": "symptom",
+                      "name": "blood per rectum"
+                    },
+                    {
+                      "type": "symptom",
+                      "name": "stool containing red currant jelly material"
+                    },
+                    {
+                      "type": "symptom",
+                      "name": "blood on rectal examination"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "criterion",
+              "name": "Evidence of intestinal vascular compromise",
+              "logical_operator": "AT_LEAST",
+              "logical_operator_arguments": [
+                3
+              ],
+              "values": [
+                {
+                  "type": "criterion",
+                  "name": "Predisposing factors: age <1 year and male sex",
+                  "logical_operator": "AND",
+                  "values": [
+                    {
+                      "type": "demographic_criteria",
+                      "name": "Less than one year old",
+                      "attribute": "age",
+                      "operator": "<=",
+                      "value": 1,
+                      "unit": "years"
+                    },
+                    {
+                      "type": "demographic_criteria",
+                      "name": "Male gender",
+                      "attribute": "gender",
+                      "operator": "==",
+                      "value": "male"
+                    }
+                  ]
+                },
+                {
+                  "type": "symptom",
+                  "name": "abdominal pain"
+                },
+                {
+                  "type": "symptom",
+                  "name": "vomiting"
+                },
+                {
+                  "type": "symptom",
+                  "name": "lethargy"
+                },
+                {
+                  "type": "symptom",
+                  "name": "pallor"
+                },
+                {
+                  "type": "symptom",
+                  "name": "hypovolemic shock"
+                },
+                {
+                  "type": "diagnostic_test",
+                  "name": "Plain abdominal radiograph showing an abnormal but non-specific bowel gas pattern",
+                  "value": "abnormal but non-specific bowel gas pattern"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "citation": "Validation of clinical case definition of acute intussusception in infants in Viet Nam and Australia",
+      "url": "https://iris.who.int/handle/10665/269695"
+    }
+  ],
+  "status": "draft",
+  "human_readable_definition": "Level 1 of diagnostic certainty\nSurgical criteria:\nThe demonstration of invagination of the intestine at surgery;\nand/or\nRadiological criteria:\nThe demonstration of invagination of the intestine by either air or liquid contrast enema;\nor\nThe demonstration of an intra-abdominal mass by abdominal ultrasound with specific characteristic featuresb that is proven to be reduced by\nhydrostatic enema on post-reduction ultrasound;\nand/or\nAutopsy criteria:\nThe demonstration of invagination of the intestine.\nLevel 2 of diagnostic certainty\nClinical criteria:\nTwo major criteria (see table for major and minor criteria for diagnosis below);\nor\nOne major criterionc and three minor criteria (see table for major and minor criteria for diagnosis below).\nLevel 3 of diagnostic certainty\nClinical criteria:\nFour or more minor criteria (see minor criteria for diagnosis below).\nAny level of diagnostic certainty\nIn the absence of surgical criteria with the definitive demonstration of an alternative cause of bowel obstruction or intestinal infarction at surgery\n(e.g., volvulus or congenital pyloric stenosis).\nMajor and minor criteria used in the case definition for the diagnosis of intussusception\nMajor criteria\n1. Evidence of intestinal obstruction: 2. Features of intestinal invagination 3. Evidence of intestinal vascular\ni. History of bile-stained vomiting; One or more of the following: compromise or venous congestion:\nand either i. abdominal mass; i. Passage of blood per rectum;\nii. Examination findings of acute ii. rectal mass; or\nabdominal distension and abnormal iii. intestinal prolapse; or absent bowel sounds; iv. plain abdominal radiograph showing a ii. Passage of a stool containing\n“red currant jelly” material;\nor visible intussusceptum or soft tissue mass; or\niii. Plain abdominal radiograph showing v. abdominal ultrasound showing a visible iii. Blood detected on rectal\nfluid levels and dilated bowel loops.\nintussusceptum or soft tissue mass; examination.\nvi. abdominal CT scan showing a visible\nintussusceptum or soft tissue mass.\nMinor criteria\ni. Predisposing factors: age <1 year and male sex; ii. Abdominal pain; iii. Vomiting;d v. Pallor;e\nvi. Hypovolemic shock;\nvii. Plain abdominal radiograph showing an abnormal but non-specific\niv. Lethargy;e bowel gas pattern.",
+  "target_public_health_threats": [
+    "Intussusception"
+  ],
+  "keywords": [
+    "Intussusception",
+    "Asia"
+  ],
+  "definition_type": "case_definition"
+}

@@ -1,0 +1,74 @@
+{
+  "title": "Open Syndrome Fever and Rash",
+  "scope": "specific",
+  "version": "1.0.0",
+  "open_syndrome_version": "1.0.0",
+  "published_in": "https://opensyndrome.org",
+  "published_at": "2025-09-21T21:21:46Z",
+  "location": "Brazil",
+  "language": "Portuguese",
+  "organization": "Ministério da Saúde",
+  "inclusion_criteria": [
+    {
+      "type": "criterion",
+      "name": "Sintomas ou histórico de viagem",
+      "logical_operator": "OR",
+      "values": [
+        {
+          "type": "criterion",
+          "name": "Febre e exantema maculopapular com algu",
+          "logical_operator": "AND",
+          "values": [
+            {
+              "type": "symptom",
+              "name": "Febre"
+            },
+            {
+              "type": "symptom",
+              "name": "Exantema maculopapular"
+            },
+            {
+              "type": "criterion",
+              "name": "Acompanhados de um ou mais dos seguintes sinais e sintomas",
+              "logical_operator": "AT_LEAST",
+              "logical_operator_args": [
+                1
+              ],
+              "values": [
+                {
+                  "type": "symptom",
+                  "name": "Cough"
+                },
+                {
+                  "type": "symptom",
+                  "name": "Runny nose (coryza)"
+                },
+                {
+                  "type": "symptom",
+                  "name": "Conjunctivitis"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "epidemiological_history",
+          "name": "Viagem ao contato com alguém que viajou",
+          "description": "Hist\u00f3ria de viagem ao exterior nos \u00faltimos 30 dias ou contato, no mesmo per\u00edodo, com algu\u00e9m que viajou ao exterior"
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "url": "https://bvsms.saude.gov.br/bvs/publicacoes/guia_vigilancia_epidemiologica_7ed.pdf"
+    }
+  ],
+  "status": "draft",
+  "human_readable_definition": "Todo paciente que, independente da idade e da situação vacinal, apresentar febre e exantema\nmaculopapular, acompanhados de um ou mais dos seguintes sinais e sintomas: tosse e/ou coriza\ne/ou conjuntivite; ou todo indivíduo suspeito com história de viagem ao exterior nos últimos 30\ndias ou de contato, no mesmo período, com alguém que viajou ao exterior.",
+  "published_by": [
+    "Ministério da Saúde"
+  ],
+  "category": "",
+  "definition_type": "case_definition"
+}
