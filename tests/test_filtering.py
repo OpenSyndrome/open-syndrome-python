@@ -7,6 +7,7 @@ from osi.filtering import (
     overlap_definitions,
     get_definition_dir,
     download_schema,
+    get_schema_filepath,
 )
 import polars as pl
 
@@ -188,7 +189,7 @@ class TestCalculateOverlapAmongDefinitions:
 
 
 @mock.patch("osi.filtering.DEFINITIONS_DIR")
-@mock.patch("osi.filtering.download_schema_and_definitions")
+@mock.patch("osi.filtering.download_definitions")
 class TestGetDefinitionsDir:
     def test_return_definitions_dir_if_not_empty(self, mock_download, mock_dir):
         mock_dir.iterdir.return_value = ["schema.json", "v1/"]
@@ -198,7 +199,7 @@ class TestGetDefinitionsDir:
         assert mock_dir.iterdir.called
         assert mock_download.called is False
 
-    def test_download_definitions_and_schema_from_repos_if_dir_is_empty(
+    def test_download_definitions_from_repo_if_dir_is_empty(
         self, mock_download, mock_dir
     ):
         mock_dir.iterdir.return_value = []
@@ -210,7 +211,7 @@ class TestGetDefinitionsDir:
 
 
 class TestDownloadSchema:
-    @mock.patch("osi.filtering.OPEN_SYNDROME_DIR")
+    @mock.patch("osi.filtering.SCHEMA_DIR")
     @mock.patch("osi.filtering.requests")
     def test_download_schema_from_github_repo(self, mock_requests, mock_dir):
         response = Mock()
@@ -220,6 +221,26 @@ class TestDownloadSchema:
         download_schema()
 
         assert mock_requests.get.called
-        assert (
-            call.__truediv__().write_text('{"version": "1.0.0"}') in mock_dir.mock_calls
-        )
+        assert mock_dir.mock_calls == [call.write_text('{"version": "1.0.0"}')]
+
+
+@mock.patch("osi.filtering.SCHEMA_DIR")
+@mock.patch("osi.filtering.download_schema")
+class TestGetSchemaFilepath:
+    def test_return_schema_filepath_if_exists(self, mock_download, mock_dir):
+        mock_dir.exists.return_value = True
+
+        get_schema_filepath()
+
+        assert mock_dir.exists.called
+        assert mock_download.called is False
+
+    def test_download_schema_from_repo_if_dir_does_not_exist(
+        self, mock_download, mock_dir
+    ):
+        mock_dir.exists.return_value = False
+
+        get_schema_filepath()
+
+        assert mock_dir.exists.called
+        assert mock_download.called is True

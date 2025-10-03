@@ -8,6 +8,7 @@ import requests
 OPEN_SYNDROME_VERSION = "v1"
 OPEN_SYNDROME_DIR = Path.home() / ".open_syndrome" / OPEN_SYNDROME_VERSION
 OPEN_SYNDROME_DIR.mkdir(parents=True, exist_ok=True)
+SCHEMA_DIR = OPEN_SYNDROME_DIR / "schema.json"
 DEFINITIONS_DIR = OPEN_SYNDROME_DIR / "definitions"
 DEFINITIONS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -17,9 +18,8 @@ def download_schema():
         "https://raw.githubusercontent.com/OpenSyndrome/schema/refs/heads/main/schemas/"
         f"{OPEN_SYNDROME_VERSION}/schema.json"
     )
-    schema_filepath = OPEN_SYNDROME_DIR / "schema.json"
-    schema_filepath.write_text(json.dumps(schema_response.json()))
-    return schema_filepath
+    SCHEMA_DIR.write_text(json.dumps(schema_response.json()))
+    return SCHEMA_DIR
 
 
 def download_definitions():
@@ -31,6 +31,12 @@ def get_definition_dir():
     if not any(DEFINITIONS_DIR.iterdir()):
         download_definitions()
     return DEFINITIONS_DIR
+
+
+def get_schema_filepath():
+    if not SCHEMA_DIR.exists():
+        download_schema()
+    return SCHEMA_DIR
 
 
 def load_definition(definition_filename, version="v1"):
