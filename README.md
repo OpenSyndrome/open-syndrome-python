@@ -1,6 +1,6 @@
 # open-syndrome-python
 
-[![Test](https://github.com/OpenSyndrome/open-syndrome-python/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenSyndrome/open-syndrome-python/actions/workflows/ci.yml)
+[![PyPI - Version](https://img.shields.io/pypi/v/opensyndrome)](https://pypi.org/project/opensyndrome/) [![Test](https://github.com/OpenSyndrome/open-syndrome-python/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenSyndrome/open-syndrome-python/actions/workflows/ci.yml)
 
 ## Installation
 
