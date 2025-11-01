@@ -1,7 +1,7 @@
 [project]
 name = "opensyndrome"
-version = "0.1.0"
-description = ""
+version = "0.1.1"
+description = "Everything in between human- and machine-readable syndromes."
 authors = [{ name = "Ana Paula Gomes", email = "apgomes88@gmail.com" }]
 requires-python = "~=3.11"
 readme = "README.md"
