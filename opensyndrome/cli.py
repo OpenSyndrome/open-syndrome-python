@@ -124,7 +124,7 @@ def convert_to_text(json_file, model, language):
     click.echo(click.style(text, fg="green"))
 
 
-@cli.command("download")
+@cli.command("download", help="Download an entity from OSI.")
 @click.argument("entity")
 def download_entity(entity):
     match entity:
