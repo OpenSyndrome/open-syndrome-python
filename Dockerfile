@@ -1,11 +1,9 @@
-FROM python:3.11-slim
+FROM python:3.12-slim-trixie
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ADD . /app
 
 WORKDIR /app
-
-RUN pip install --no-cache-dir poetry==2.1.1
-
-COPY . /app
-
-RUN poetry config virtualenvs.create false && poetry install
+RUN uv sync
 
 ENTRYPOINT ["uv", "run", "osi"]

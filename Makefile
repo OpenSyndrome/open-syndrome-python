@@ -18,3 +18,6 @@ ollama_schema:
 					   --use-default \
 					   --input $(SCHEMA_FILE) \
 					   --output opensyndrome/to_be_updated__schema.py
+
+build:
+	@docker build -t opensyndrome .

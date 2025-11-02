@@ -4,9 +4,10 @@
 
 ## Installation
 
-You can install it from PyPI or from Docker.
+You can install it from PyPI or Docker. To use the conversion features,
+you will need to have [Ollama](https://github.com/ollama/ollama) installed.
 
-From PyPi, install the package with `pip install opensyndrome`. Then run it with `osi`.
+From PyPi, install the package with `pip install opensyndrome`. Then run it with `osi --help`.
 
 From Docker, you can run the following command to build the image, tagged `osi`:
 
@@ -17,7 +18,7 @@ docker build -t opensyndrome .
 Run the container interactively, removing it when it exits
 
 ```bash
-docker run --rm opensyndrome
+docker run --rm -it opensyndrome
 ```
 
 To read a `.env` file, mount it:
