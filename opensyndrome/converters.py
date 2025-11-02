@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from importlib.resources import files
 from pathlib import Path
 import random
 
@@ -15,9 +16,9 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-def load_examples(examples_dir, random_k=None):
+def load_examples(examples_dir: Path, random_k=None):
     json_definitions = {}
-    for raw_json in Path(examples_dir).glob("**/*"):
+    for raw_json in examples_dir.glob("**/*"):
         if not raw_json.name.endswith(".json"):
             continue
         if raw_json.read_text() != "":
@@ -135,7 +136,8 @@ def generate_machine_readable_format(
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
 
-    examples = load_examples("examples/", 3)
+    examples_dir = files("opensyndrome").joinpath("examples")
+    examples = load_examples(examples_dir, 3)
     formatted_prompt = PROMPT_TO_MACHINE_READABLE_FORMAT.format(
         examples=examples,
         human_readable_definition=human_readable_definition,
