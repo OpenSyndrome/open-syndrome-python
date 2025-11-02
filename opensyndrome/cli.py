@@ -1,9 +1,12 @@
 import json
+from functools import wraps
 from pathlib import Path
 
 from pygments import highlight, lexers, formatters
 import jsonschema
 import click
+import ollama
+from ollama._types import ResponseError
 
 from opensyndrome.converters import (
     generate_machine_readable_format,
@@ -51,6 +54,29 @@ def color_json(json_definition: dict):
     return highlight(formatted_json, lexers.JsonLexer(), formatters.TerminalFormatter())
 
 
+def is_ollama_available():
+    try:
+        ollama.list()
+        return True
+    except (ConnectionError, ResponseError):
+        return False
+
+
+def check_ollama(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not is_ollama_available():
+            click.echo(
+                click.style("Ollama service is missing or unavailable.", fg="red"),
+                err=True,
+            )
+            return
+        else:
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
 @cli.command("convert")
 @click.option(
     "--validate", is_flag=True, help="Validate the JSON file against the schema."
@@ -78,6 +104,7 @@ def color_json(json_definition: dict):
     type=str,
     help="Human-readable definition. If not provided, an editor will open to input the definition.",
 )
+@check_ollama
 def convert_to_json(validate, model, language, edit, human_readable_definition):
     """
     Convert human-readable definition (TEXT) to the machine-readable format (JSON).
@@ -117,6 +144,7 @@ def convert_to_json(validate, model, language, edit, human_readable_definition):
     help="Language used to generate the human-readable definition.",
     default="American English",
 )
+@check_ollama
 def convert_to_text(json_file, model, language):
     """Convert a machine-readable format (JSON) to a human-readable format (TEXT)."""
     machine_readable_definition = json.loads(Path(json_file).read_text())
