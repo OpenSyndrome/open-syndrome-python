@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from datetime import datetime
 from importlib.resources import files
 from pathlib import Path
@@ -14,6 +13,7 @@ from opensyndrome.schema import OpenSyndromeCaseDefinitionSchema
 
 load_dotenv()
 logger = logging.getLogger(__name__)
+DEFAULT_MODEL = "mistral"
 
 
 def load_examples(examples_dir: Path, random_k=None):
@@ -35,7 +35,6 @@ def load_examples(examples_dir: Path, random_k=None):
     return examples
 
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL")
 PROMPT_TO_MACHINE_READABLE_FORMAT = """
 You are an expert in creating standardized case definition JSONs for medical syndromes.
 Generate a JSON that strictly follows this JSON schema, using the provided example documents as reference.
@@ -131,7 +130,7 @@ def _drop_regex_pattern(node: dict):
 
 
 def generate_machine_readable_format(
-    human_readable_definition, model="mistral", language="American English"
+    human_readable_definition, model=DEFAULT_MODEL, language="American English"
 ):
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
@@ -176,7 +175,7 @@ def _exclude_metadata_fields(definition: dict):
 
 
 def generate_human_readable_format(
-    machine_readable_definition, model="mistral", language="American English"
+    machine_readable_definition, model=DEFAULT_MODEL, language="American English"
 ):
     if not machine_readable_definition:
         raise ValueError("Machine-readable definition cannot be empty.")
