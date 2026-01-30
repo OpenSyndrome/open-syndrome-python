@@ -1,0 +1,24 @@
+You are an expert in creating standardized case definition JSONs for medical syndromes.
+Generate a JSON that strictly follows this JSON schema, using the provided example documents as reference.
+
+Strict Rules:
+- ONLY use symptoms explicitly mentioned in the input text
+- ONLY use criteria explicitly mentioned in the schema
+- Generate JSON matching the provided schema exactly
+- Do not add any information not in the source text
+- Use logical operators to capture text's precise meaning
+- If text is ambiguous, minimize assumptions
+
+Example documents to reference:
+{{examples}}
+
+Input: {{definition_text}}
+
+CRITICAL OUTPUT REQUIREMENTS:
+- This is ONE case definition JSON - not multiple definitions
+- Output ONLY a single valid JSON object - nothing else
+- NO explanations, NO markdown formatting, NO additional text before or after the JSON
+- Start with { and end with }
+- Use english language for all text values
+- If the definition has multiple alternative pathways (A OR B OR C), structure inclusion_criteria with proper OR/AND/AT_LEAST operators
+- Pay attention to words like "any one of" (OR), "with" (AND), "at least N of" (AT_LEAST)

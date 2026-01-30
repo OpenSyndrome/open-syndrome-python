@@ -1,0 +1,39 @@
+description: "Syndrome Definition Logic Evaluation"
+
+providers:
+  - id: ollama:mistral  # ollama:chat:llama3.2
+    config:
+      temperature: 0 # Deterministic for testing
+      format: file://${SCHEMA_FILE}
+
+prompts:
+  - "prompts/v1_standard.txt"
+  - "prompts/v2_chain_of_thought.txt"
+
+defaultTest:
+  vars:
+    examples: file://examples_combined.txt
+  assert:
+      # Check 1: Must be valid JSON
+      - type: is-json
+
+      # Check 2: The "LLM Judge" for Logic
+      - type: llm-rubric
+        provider: ollama:mistral
+        value: |
+          You are evaluating a case definition JSON output. Compare ONLY the inclusion_criteria and exclusion_criteria fields.
+
+          Gold Standard: {{gold_standard_json}}
+
+          Evaluation Criteria:
+          1. Extract and compare ONLY: inclusion_criteria and exclusion_criteria (ignore all other fields)
+          2. Check logical operators are correct: AND, OR, AT_LEAST (with correct logical_operator_arguments)
+          3. Check criterion types match: symptom, diagnostic_test, epidemiological_history, demographic_criteria, etc.
+          4. Verify nesting structure is semantically equivalent
+          5. Criterion names should be semantically equivalent (ignore minor wording like "high fever" vs "fever > 38°C")
+          6. For diagnostic_test: check operator and value are semantically correct (>=, >, <, <=, ==)
+
+          Reply "Pass" ONLY if the inclusion/exclusion criteria logic is structurally and semantically equivalent.
+          Reply "Fail" if logical operators, nesting, or criterion types differ significantly.
+
+tests: file://dataset_txt_json.csv
