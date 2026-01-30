@@ -1,7 +1,7 @@
 from unittest import mock
 from unittest.mock import Mock, call
 
-from opensyndrome.filtering import (
+from opensyndrome.artifacts import (
     download_definitions,
     get_definition_dir,
     download_schema,
@@ -9,8 +9,8 @@ from opensyndrome.filtering import (
 )
 
 
-@mock.patch("opensyndrome.filtering.DEFINITIONS_DIR")
-@mock.patch("opensyndrome.filtering.download_definitions")
+@mock.patch("opensyndrome.artifacts.DEFINITIONS_DIR")
+@mock.patch("opensyndrome.artifacts.download_definitions")
 class TestGetDefinitionsDir:
     def test_return_definitions_dir_if_not_empty(self, mock_download, mock_dir):
         mock_dir.iterdir.return_value = ["schema.json", "v1/"]
@@ -32,8 +32,8 @@ class TestGetDefinitionsDir:
 
 
 class TestDownloadSchema:
-    @mock.patch("opensyndrome.filtering.SCHEMA_DIR")
-    @mock.patch("opensyndrome.filtering.requests")
+    @mock.patch("opensyndrome.artifacts.SCHEMA_DIR")
+    @mock.patch("opensyndrome.artifacts.requests")
     def test_download_schema_from_github_repo(self, mock_requests, mock_dir):
         response = Mock()
         response.json.return_value = {"version": "1.0.0"}  # fake schema
@@ -45,8 +45,8 @@ class TestDownloadSchema:
         assert mock_dir.mock_calls == [call.write_text('{"version": "1.0.0"}')]
 
 
-@mock.patch("opensyndrome.filtering.SCHEMA_DIR")
-@mock.patch("opensyndrome.filtering.download_schema")
+@mock.patch("opensyndrome.artifacts.SCHEMA_DIR")
+@mock.patch("opensyndrome.artifacts.download_schema")
 class TestGetSchemaFilepath:
     def test_return_schema_filepath_if_exists(self, mock_download, mock_dir):
         mock_dir.exists.return_value = True
@@ -67,8 +67,8 @@ class TestGetSchemaFilepath:
         assert mock_download.called is True
 
 
-@mock.patch("opensyndrome.filtering.requests")
-@mock.patch("opensyndrome.filtering.DEFINITIONS_DIR")
+@mock.patch("opensyndrome.artifacts.requests")
+@mock.patch("opensyndrome.artifacts.DEFINITIONS_DIR")
 class TestDownloadDefinitions:
     def test_download_definitions_recursively(self, mock_path, mock_requests):
         mock_response_v1 = Mock()

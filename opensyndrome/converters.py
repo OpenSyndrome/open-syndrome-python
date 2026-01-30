@@ -8,7 +8,7 @@ import random
 from dotenv import load_dotenv
 from ollama import chat
 
-from opensyndrome.filtering import get_schema_filepath
+from opensyndrome.artifacts import get_schema_filepath
 from opensyndrome.schema import OpenSyndromeCaseDefinitionSchema
 
 load_dotenv()

@@ -12,7 +12,7 @@ from opensyndrome.converters import (
     generate_machine_readable_format,
     generate_human_readable_format,
 )
-from opensyndrome.filtering import get_schema_filepath, get_definition_dir
+from opensyndrome.artifacts import get_schema_filepath, get_definition_dir
 from opensyndrome.validators import validate_machine_readable_format
 
 
