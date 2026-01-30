@@ -81,7 +81,7 @@ osi validate
 
 ## Development
 
-To get started with development, you need to have [Poetry](https://python-poetry.org/) installed.
+To get started with development, you need to have [uv](https://docs.astral.sh/uv/) installed.
 
 ### Install dependencies
 
