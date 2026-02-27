@@ -1,6 +1,6 @@
 import pytest
 
-from opensyndrome.filter import ColumnSpec
+from opensyndrome.filter import ColumnSpec, load_profile, ProfileData
 
 
 class TestColumnSpec:
@@ -43,3 +43,45 @@ class TestColumnSpec:
     def test_raises_when_demographic_missing_attribute(self):
         with pytest.raises(ValueError, match="no 'attribute'"):
             ColumnSpec("col", concept="demographic_criteria")
+
+
+class TestLoadProfile:
+    def test_returns_profile_data_with_columns(self):
+        yaml_data = {
+            "profiles": [
+                {
+                    "name": "test",
+                    "columns": {
+                        "age": {
+                            "concept": "demographic_criteria",
+                            "attribute": "age",
+                            "dtype": "integer",
+                        },
+                    },
+                }
+            ]
+        }
+        profile = load_profile(yaml_data, "test")
+        assert isinstance(profile, ProfileData)
+        assert len(profile.columns) == 1
+        assert profile.columns[0].col_name == "age"
+        assert profile.value_encodings == {}
+
+    def test_returns_value_encodings_when_defined(self):
+        yaml_data = {
+            "profiles": [
+                {
+                    "name": "test",
+                    "value_encodings": {"sex": {"male": "M", "female": "F"}},
+                    "columns": {
+                        "sex": {"concept": "demographic_criteria", "attribute": "sex"},
+                    },
+                }
+            ]
+        }
+        profile = load_profile(yaml_data, "test")
+        assert profile.value_encodings == {"sex": {"male": "M", "female": "F"}}
+
+    def test_raises_for_unknown_profile(self):
+        with pytest.raises(KeyError, match="missing"):
+            load_profile({"profiles": []}, "missing")

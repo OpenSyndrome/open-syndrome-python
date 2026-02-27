@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -64,3 +64,53 @@ class ColumnSpec:
             attribute=spec.get("attribute"),
             system=spec.get("system"),
         )
+
+
+@dataclass
+class ProfileData:
+    """Result of loading a mapping profile.
+
+    Attributes
+    ----------
+    columns:
+        Column descriptors for the profile.
+    value_encodings:
+        Maps attribute name → {canonical_value: dataset_value}.
+        E.g. ``{"sex": {"male": "M", "female": "F"}}``.
+    """
+
+    columns: list[ColumnSpec]
+    value_encodings: dict[str, dict[str, str]] = field(default_factory=dict)
+
+
+def load_profile(yaml_data: dict, profile_name: str) -> ProfileData:
+    """Load a named profile from parsed YAML data.
+
+    Parameters
+    ----------
+    yaml_data:
+        Parsed content of the mapping YAML file.
+    profile_name:
+        Name of the profile to load.
+
+    Returns
+    -------
+    ProfileData
+        Column specs and value encodings for the profile.
+
+    Raises
+    ------
+    KeyError
+        If the profile name is not found.
+    """
+    for profile in yaml_data.get("profiles", []):
+        if profile["name"] == profile_name:
+            columns = [
+                ColumnSpec.from_dict(col_name, spec)
+                for col_name, spec in profile.get("columns", {}).items()
+            ]
+            return ProfileData(
+                columns=columns,
+                value_encodings=profile.get("value_encodings", {}),
+            )
+    raise KeyError(f"Profile '{profile_name}' not found in mapping.")
