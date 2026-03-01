@@ -6,15 +6,17 @@ from opensyndrome.filter import (
     ColumnSpec,
     load_profile,
     ProfileData,
+    InvalidOperator,
+    UnresolvableCriterion,
+    OSDEngine,
     _code_to_regex,
     _apply_flags,
     _cast,
-    InvalidOperator,
     _combine,
-    UnresolvableCriterion,
     _build_code_expr,
-    OSDEngine,
     _build_text_expr,
+    _build_attr_expr,
+    _parse_criterion,
 )
 
 SEX_ENCODINGS = {"sex": {"male": "M", "female": "F"}}
@@ -389,3 +391,513 @@ class TestBuildTextExpr:
         criterion = {"type": "epidemiological_history", "name": "fever"}
         with pytest.raises(UnresolvableCriterion, match="epidemiological_history"):
             _build_text_expr(criterion, icd_columns, "epidemiological_history")
+
+
+class TestBuildAttrExpr:
+    def test_numeric_greater_than(self, fake_dataset, demographic_columns):
+        assert (fake_dataset["age"] > 60).sum() == 190  # expected value
+        criterion = {
+            "type": "demographic_criteria",
+            "attribute": "age",
+            "operator": ">",
+            "value": 60,
+        }
+        result = fake_dataset.filter(_build_attr_expr(criterion, demographic_columns))
+        assert result.height == 190
+        assert (result["age"] > 60).all()
+
+    def test_value_encoding_translates_canonical_value(
+        self, fake_dataset, demographic_columns
+    ):
+        assert (fake_dataset["sex"].eq("F")).sum() == 167  # value in the dataset
+        criterion = {
+            "type": "demographic_criteria",
+            "attribute": "sex",
+            "operator": "==",
+            "value": "female",
+        }
+        result = fake_dataset.filter(
+            _build_attr_expr(criterion, demographic_columns, SEX_ENCODINGS)
+        )
+        assert result.height == 167
+        assert result["sex"].eq("F").all()
+
+    def test_without_encoding_uses_value_as_is(self, fake_dataset, demographic_columns):
+        assert (fake_dataset["sex"].eq("F")).sum() == 167
+        criterion = {
+            "type": "demographic_criteria",
+            "attribute": "sex",
+            "operator": "==",
+            "value": "F",
+        }
+        result = fake_dataset.filter(_build_attr_expr(criterion, demographic_columns))
+        assert result.height == 167
+        assert result["sex"].eq("F").all()
+
+    def test_regex_operator_matches_pattern(self, fake_dataset, demographic_columns):
+        assert fake_dataset["sex"].is_in(["F", "M"]).sum() == 338
+        criterion = {
+            "type": "demographic_criteria",
+            "attribute": "sex",
+            "operator": "regex",
+            "regex_pattern": "^[MF]$",
+        }
+        result = fake_dataset.filter(_build_attr_expr(criterion, demographic_columns))
+        assert result.height == 338
+        assert result["sex"].is_in(["M", "F"]).all()
+
+    def test_raises_when_attribute_not_mapped(self, demographic_columns):
+        criterion = {
+            "type": "demographic_criteria",
+            "attribute": "weight",
+            "operator": ">",
+            "value": 70,
+        }
+        with pytest.raises(UnresolvableCriterion, match="weight"):
+            _build_attr_expr(criterion, demographic_columns)
+
+    def test_raises_for_unsupported_operator(self, demographic_columns):
+        criterion = {
+            "type": "demographic_criteria",
+            "attribute": "age",
+            "operator": "LIKE",
+            "value": 30,
+        }
+        with pytest.raises(InvalidOperator):
+            _build_attr_expr(criterion, demographic_columns)
+
+
+# TODO
+class TestParseCriterion:
+    def test_and_operator_requires_all_conditions(self, fake_dataset, all_columns):
+        criterion = {
+            "type": "criterion",
+            "logical_operator": "AND",
+            "values": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "sex",
+                    "operator": "==",
+                    "value": "F",
+                },
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">",
+                    "value": 60,
+                },
+            ],
+        }
+        result = fake_dataset.filter(_parse_criterion(criterion, all_columns))
+        assert (result["sex"].eq("F")).all()
+        assert (result["age"].gt(60)).all()
+
+    def test_or_operator_result_is_superset_of_and(self, fake_dataset, all_columns):
+        base = {
+            "type": "criterion",
+            "values": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "sex",
+                    "operator": "==",
+                    "value": "F",
+                },
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">",
+                    "value": 60,
+                },
+            ],
+        }
+        result_or = fake_dataset.filter(
+            _parse_criterion({**base, "logical_operator": "OR"}, all_columns)
+        )
+        result_and = fake_dataset.filter(
+            _parse_criterion({**base, "logical_operator": "AND"}, all_columns)
+        )
+        # TODO
+        assert result_or.height >= result_and.height
+
+    def test_at_least_2_of_3_is_superset_of_and_all_3(self, fake_dataset, all_columns):
+        criterion = {
+            "type": "criterion",
+            "logical_operator": "AT_LEAST",
+            "logical_operator_arguments": [2],
+            "values": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "sex",
+                    "operator": "==",
+                    "value": "F",
+                },
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">",
+                    "value": 60,
+                },
+                {"type": "epidemiological_history", "name": "Frankfurt"},
+            ],
+        }
+        result_at_least = fake_dataset.filter(_parse_criterion(criterion, all_columns))
+        result_and = fake_dataset.filter(
+            _parse_criterion({**criterion, "logical_operator": "AND"}, all_columns)
+        )
+        assert result_at_least.height >= result_and.height
+
+    def test_at_least_without_arguments_raises(self, all_columns):
+        criterion = {
+            "type": "criterion",
+            "logical_operator": "AT_LEAST",
+            "values": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">",
+                    "value": 18,
+                },
+            ],
+        }
+        with pytest.raises(InvalidOperator, match="logical_operator_arguments"):
+            _parse_criterion(criterion, all_columns)
+
+    def test_missing_type_raises_with_clear_message(self, all_columns):
+        with pytest.raises(UnresolvableCriterion, match="missing.*type"):
+            _parse_criterion({"name": "no type here"}, all_columns)
+
+    def test_unknown_type_raises_with_type_name(self, all_columns):
+        with pytest.raises(UnresolvableCriterion, match="unknown_type"):
+            _parse_criterion({"type": "unknown_type", "name": "x"}, all_columns)
+
+    def test_symptom_with_attribute_and_operator_uses_attr_expr(
+        self, fake_dataset, demographic_columns
+    ):
+        # body_temperature >= 39 on a numeric column is the same routing as demographic_criteria
+        columns = [
+            ColumnSpec(
+                "age", concept="symptom", attribute="body_temperature", dtype="integer"
+            )
+        ]
+        criterion = {
+            "type": "symptom",
+            "name": "High body temperature",
+            "attribute": "body_temperature",
+            "operator": ">=",
+            "value": 60,
+        }
+        result = fake_dataset.filter(_parse_criterion(criterion, columns))
+        assert (result["age"].ge(60)).all()
+
+    def test_symptom_without_attribute_uses_text_expr(
+        self, fake_dataset, epidemiological_history_columns
+    ):
+        criterion = {"type": "epidemiological_history", "name": "Frankfurt"}
+        result = fake_dataset.filter(
+            _parse_criterion(criterion, epidemiological_history_columns)
+        )
+        assert result.height > 0
+        assert (result["location"].eq("Frankfurt")).all()
+
+    def test_diagnostic_test_without_attribute_uses_text_expr(self, fake_dataset):
+        # diagnostic_test with only a name falls back to text matching against diagnostic_test columns
+        columns = [ColumnSpec("location", concept="diagnostic_test")]
+        criterion = {"type": "diagnostic_test", "name": "Frankfurt"}
+        result = fake_dataset.filter(_parse_criterion(criterion, columns))
+        assert result.height > 0
+        assert (result["location"].eq("Frankfurt")).all()
+
+    def test_epidemiological_history_with_attribute_uses_attr_expr(self, fake_dataset):
+        columns = [
+            ColumnSpec(
+                "age",
+                concept="epidemiological_history",
+                attribute="onset_days",
+                dtype="integer",
+            )
+        ]
+        criterion = {
+            "type": "epidemiological_history",
+            "name": "Recent exposure",
+            "attribute": "onset_days",
+            "operator": "<=",
+            "value": 14,
+        }
+        result = fake_dataset.filter(_parse_criterion(criterion, columns))
+        assert (result["age"].le(14)).all()
+
+    def test_syndrome_type_raises(self, all_columns):
+        with pytest.raises(UnresolvableCriterion, match="syndrome"):
+            _parse_criterion({"type": "syndrome", "name": "Dengue"}, all_columns)
+
+    def test_professional_judgment_raises(self, all_columns):
+        with pytest.raises(UnresolvableCriterion, match="professional_judgment"):
+            _parse_criterion(
+                {"type": "professional_judgment", "name": "Clinical assessment"},
+                all_columns,
+            )
+
+
+class TestOSDEngineLabel:
+    _dengue_def = {
+        "inclusion_criteria": [
+            {"type": "diagnosis", "code": {"system": "ICD-10", "code": "A90"}}
+        ]
+    }
+    _influenza_def = {
+        "inclusion_criteria": [
+            {"type": "diagnosis", "code": {"system": "ICD-10", "code": "J1%"}}
+        ]
+    }
+    _exclusion_def = {
+        "exclusion_criteria": [
+            {"type": "diagnosis", "code": {"system": "ICD-10", "code": "A90"}}
+        ]
+    }
+    _mixed_def = {
+        "inclusion_criteria": [
+            {"type": "diagnosis", "code": {"system": "ICD-10", "code": "J1%"}}
+        ],
+        "exclusion_criteria": [
+            {
+                "type": "demographic_criteria",
+                "attribute": "age",
+                "operator": ">",
+                "value": 60,
+            }
+        ],
+    }
+
+    def test_adds_boolean_column(self, fake_dataset, engine):
+        labeled = engine.label(fake_dataset, {"dengue": self._dengue_def})
+        assert "dengue" in labeled.columns
+        assert labeled["dengue"].dtype == pl.Boolean
+
+    def test_preserves_all_original_rows(self, fake_dataset, engine):
+        labeled = engine.label(fake_dataset, {"dengue": self._dengue_def})
+        assert labeled.height == fake_dataset.height
+
+    def test_adds_one_column_per_definition(self, fake_dataset, engine):
+        labeled = engine.label(
+            fake_dataset,
+            {
+                "dengue": self._dengue_def,
+                "influenza": self._influenza_def,
+            },
+        )
+        assert "dengue" in labeled.columns
+        assert "influenza" in labeled.columns
+        assert labeled.height == fake_dataset.height
+
+    def test_empty_definitions_returns_original(self, fake_dataset, engine):
+        labeled = engine.label(fake_dataset, {})
+        assert labeled.equals(fake_dataset)
+
+    def test_no_criteria_marks_all_rows_true(self, fake_dataset, engine):
+        labeled = engine.label(fake_dataset, {"everything": {}})
+        assert labeled["everything"].all()
+
+    def test_true_rows_match_run_inclusion_only(self, fake_dataset, engine):
+        labeled = engine.label(fake_dataset, {"dengue": self._dengue_def})
+        via_label = labeled.filter(pl.col("dengue")).drop("dengue")
+        via_run = engine.run(fake_dataset, self._dengue_def)
+        assert via_label.equals(via_run)
+
+    def test_true_rows_match_run_exclusion_only(self, fake_dataset, engine):
+        labeled = engine.label(fake_dataset, {"not_dengue": self._exclusion_def})
+        via_label = labeled.filter(pl.col("not_dengue")).drop("not_dengue")
+        via_run = engine.run(fake_dataset, self._exclusion_def)
+        assert via_label.equals(via_run)
+
+    def test_true_rows_match_run_inclusion_and_exclusion(self, fake_dataset, engine):
+        labeled = engine.label(fake_dataset, {"influenza_young": self._mixed_def})
+        via_label = labeled.filter(pl.col("influenza_young")).drop("influenza_young")
+        via_run = engine.run(fake_dataset, self._mixed_def)
+        assert via_label.equals(via_run)
+
+
+class TestOSDEngine:
+    def test_accepts_profile_data(self, profile):
+        engine = OSDEngine(profile)
+        assert engine.value_encodings == SEX_ENCODINGS
+
+    def test_accepts_plain_column_list(self, all_columns):
+        engine = OSDEngine(all_columns)
+        assert engine.value_encodings == {}
+
+    def test_skip_unresolvable_defaults_to_false(self, profile):
+        engine = OSDEngine(profile)
+        assert engine.skip_unresolvable is False
+
+    def test_filters_by_diagnosis_code(self, fake_dataset, engine):
+        osd = {
+            "inclusion_criteria": [
+                {
+                    "type": "criterion",
+                    "logical_operator": "OR",
+                    "values": [
+                        {
+                            "type": "diagnosis",
+                            "name": "Dengue",
+                            "code": {"system": "ICD-10", "code": "A90"},
+                        },
+                        {
+                            "type": "diagnosis",
+                            "name": "Dengue haemorrhagic",
+                            "code": {"system": "ICD-10", "code": "A91"},
+                        },
+                    ],
+                }
+            ]
+        }
+        result = engine.run(fake_dataset, osd)
+        assert result.height > 0
+        assert result["icd_code"].is_in(["A90", "A91"]).all()
+
+    def test_filters_by_demographic(self, fake_dataset, engine):
+        osd = {
+            "inclusion_criteria": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">=",
+                    "value": 18,
+                },
+            ]
+        }
+        result = engine.run(fake_dataset, osd)
+        assert (result["age"] >= 18).all()
+
+    def test_canonical_sex_value_resolved_via_profile_encodings(
+        self, fake_dataset, engine
+    ):
+        osd = {
+            "inclusion_criteria": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "sex",
+                    "operator": "==",
+                    "value": "female",
+                },
+            ]
+        }
+        result = engine.run(fake_dataset, osd)
+        assert result.height > 0
+        assert (result["sex"] == "F").all()
+
+    def test_no_criteria_returns_full_dataframe(self, fake_dataset, engine):
+        assert engine.run(fake_dataset, {}).height == fake_dataset.height
+
+    def test_multiple_top_level_criteria_are_implicitly_anded(
+        self, fake_dataset, engine
+    ):
+        osd = {
+            "inclusion_criteria": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "sex",
+                    "operator": "==",
+                    "value": "female",
+                },
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">",
+                    "value": 60,
+                },
+            ]
+        }
+        result = engine.run(fake_dataset, osd)
+        assert (result["sex"] == "F").all()
+        assert (result["age"] > 60).all()
+
+    def test_exclusion_removes_matching_rows(self, fake_dataset, engine):
+        osd = {
+            "exclusion_criteria": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "sex",
+                    "operator": "==",
+                    "value": "female",
+                },
+            ],
+        }
+        result = engine.run(fake_dataset, osd)
+        assert (result["sex"] != "F").all()
+
+    def test_inclusion_and_exclusion_combined(self, fake_dataset, engine):
+        osd = {
+            "inclusion_criteria": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">=",
+                    "value": 18,
+                },
+            ],
+            "exclusion_criteria": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "sex",
+                    "operator": "==",
+                    "value": "female",
+                },
+            ],
+        }
+        result = engine.run(fake_dataset, osd)
+        assert (result["age"] >= 18).all()
+        assert (result["sex"] != "F").all()
+
+    def test_only_exclusion_returns_subset_of_full_dataset(self, fake_dataset, engine):
+        osd = {
+            "exclusion_criteria": [
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": "<",
+                    "value": 18,
+                },
+            ]
+        }
+        result = engine.run(fake_dataset, osd)
+        assert result.height < fake_dataset.height
+        assert (result["age"] >= 18).all()
+
+    # skip un-resolvable
+    def test_skips_professional_judgment_and_applies_remaining(
+        self, fake_dataset, profile
+    ):
+        engine = OSDEngine(profile, skip_unresolvable=True)
+        osd = {
+            "inclusion_criteria": [
+                {"type": "professional_judgment", "name": "Clinical assessment"},
+                {
+                    "type": "demographic_criteria",
+                    "attribute": "age",
+                    "operator": ">",
+                    "value": 60,
+                },
+            ]
+        }
+        result = engine.run(fake_dataset, osd)
+        assert (result["age"] > 60).all()
+
+    def test_all_skipped_criteria_returns_full_dataframe(self, fake_dataset, profile):
+        engine = OSDEngine(profile, skip_unresolvable=True)
+        osd = {
+            "inclusion_criteria": [
+                {"type": "professional_judgment", "name": "Clinical assessment"},
+            ]
+        }
+        result = engine.run(fake_dataset, osd)
+        assert result.height == fake_dataset.height
+
+    def test_raises_by_default(self, fake_dataset, profile):
+        engine = OSDEngine(profile)
+        osd = {
+            "inclusion_criteria": [
+                {"type": "professional_judgment", "name": "Clinical assessment"},
+            ]
+        }
+        with pytest.raises(UnresolvableCriterion):
+            engine.run(fake_dataset, osd)
