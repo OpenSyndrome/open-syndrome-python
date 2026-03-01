@@ -406,6 +406,40 @@ class OSDEngine:
         """Display expression tree."""
         exprs.meta.tree_format()
 
+    def label(
+        self,
+        df: pl.DataFrame,
+        definitions: dict[str, dict],
+    ) -> pl.DataFrame:
+        """Annotate *df* with one boolean column per definition.
+
+        Each added column is named after the definition key and contains
+        ``True`` for rows that satisfy the definition's criteria.
+
+        Parameters
+        ----------
+        df:
+            The dataset to annotate.
+        definitions:
+            Mapping of definition name → parsed OSD JSON definition dict.
+
+        Returns
+        -------
+        pl.DataFrame
+            Original DataFrame with extra boolean columns added.
+        """
+        schema = dict(df.schema)
+        new_cols = []
+        for name, osd_def in definitions.items():
+            inclusion = self._compile(osd_def.get("inclusion_criteria", []), schema)
+            exclusion = self._compile(osd_def.get("exclusion_criteria", []), schema)
+            expr = inclusion
+            if exclusion is not None:
+                negated = ~exclusion
+                expr = negated if expr is None else expr & negated
+            new_cols.append((expr if expr is not None else pl.lit(True)).alias(name))
+        return df.with_columns(new_cols)
+
     def run(self, df: pl.DataFrame, osd_definition: dict) -> pl.DataFrame:
         """Filter *df* according to *osd_definition* inclusion and exclusion criteria.
 
