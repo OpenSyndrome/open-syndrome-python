@@ -3,16 +3,13 @@ from dataclasses import dataclass, field
 from typing import Any
 import polars as pl
 
+from opensyndrome import schema
 
-_VALID_CONCEPTS = frozenset(
-    {
-        "diagnosis",
-        "demographic_criteria",
-        "diagnostic_test",
-        "symptom",
-        "epidemiological_history",
-    }
-)
+
+_VALID_CONCEPTS = [
+    format_type.value for format_type in schema.Type if format_type.value != "criterion"
+]
+
 
 _DTYPE_MAP: dict[str, type[pl.DataType]] = {
     "integer": pl.Int64,
@@ -316,31 +313,16 @@ def _parse_criterion(
         n = n_args[0] if n_args else None
         return _combine(sub_exprs, logical_operator, n)
 
-    if ctype == "diagnosis":
-        if "code" in criterion:
-            return _build_code_expr(criterion, columns)
-        return _build_text_expr(criterion, columns, "diagnosis")
+    if "code" in criterion:
+        return _build_code_expr(criterion, columns)
 
-    if ctype == "demographic_criteria":
-        return _build_attr_expr(criterion, columns, value_encodings, df_schema)
-
-    # symptom, diagnostic_test, epidemiological_history:
     # if the criterion carries attribute + operator, treat it as a measurable attribute
     # (e.g. body_temperature >= 39); otherwise match by name/regex against text columns.
-    if ctype in ("symptom", "diagnostic_test", "epidemiological_history"):
-        if "attribute" in criterion and "operator" in criterion:
-            return _build_attr_expr(criterion, columns, value_encodings, df_schema)
+    if "attribute" in criterion and "operator" in criterion:
+        return _build_attr_expr(criterion, columns, value_encodings, df_schema)
+
+    if ctype in _VALID_CONCEPTS:
         return _build_text_expr(criterion, columns, ctype)
-
-    if ctype == "syndrome":
-        raise UnresolvableCriterion(
-            "Criterion type 'syndrome' (cross-definition reference) is not yet supported."
-        )
-
-    if ctype == "professional_judgment":
-        raise UnresolvableCriterion(
-            "Criterion type 'professional_judgment' cannot be evaluated against structured data."
-        )
 
     raise UnresolvableCriterion(f"Unknown criterion type: '{ctype}'.")
 
@@ -355,9 +337,7 @@ class OSDEngine:
         list of :class:`ColumnSpec` objects when no value encodings are needed.
     skip_unresolvable:
         When ``True``, criteria that cannot be evaluated against structured data
-        (``professional_judgment``, ``syndrome``) are silently skipped instead of
-        raising :exc:`UnresolvableCriterion`. Useful when definitions mix
-        computational and non-computational criteria.
+        are silently skipped instead of raising :exc:`UnresolvableCriterion`.
     """
 
     def __init__(
@@ -437,10 +417,10 @@ class OSDEngine:
             if exclusion is not None:
                 negated = ~exclusion
                 expr = negated if expr is None else expr & negated
-            new_cols.append((expr if expr is not None else pl.lit(True)).alias(name))
+            new_cols.append((expr if expr is not None else pl.lit(False)).alias(name))
         return df.with_columns(new_cols)
 
-    def run(self, df: pl.DataFrame, osd_definition: dict) -> pl.DataFrame:
+    def filter(self, df: pl.DataFrame, osd_definition: dict) -> pl.DataFrame:
         """Filter *df* according to *osd_definition* inclusion and exclusion criteria.
 
         Rows must satisfy all inclusion criteria AND fail all exclusion criteria.

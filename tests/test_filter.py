@@ -404,7 +404,7 @@ class TestBuildAttrExpr:
         }
         result = fake_dataset.filter(_build_attr_expr(criterion, demographic_columns))
         assert result.height == 190
-        assert (result["age"] > 60).all()
+        assert (result["age"].gt(60)).all()
 
     def test_value_encoding_translates_canonical_value(
         self, fake_dataset, demographic_columns
@@ -672,9 +672,7 @@ class TestOSDEngineLabel:
         labeled = engine.label(fake_dataset, {"dengue": self._dengue_def})
         assert "dengue" in labeled.columns
         assert labeled["dengue"].dtype == pl.Boolean
-
-    def test_preserves_all_original_rows(self, fake_dataset, engine):
-        labeled = engine.label(fake_dataset, {"dengue": self._dengue_def})
+        # check if preserves all original rows
         assert labeled.height == fake_dataset.height
 
     def test_adds_one_column_per_definition(self, fake_dataset, engine):
@@ -693,36 +691,38 @@ class TestOSDEngineLabel:
         labeled = engine.label(fake_dataset, {})
         assert labeled.equals(fake_dataset)
 
-    def test_no_criteria_marks_all_rows_true(self, fake_dataset, engine):
+    def test_no_criteria_marks_all_rows_false(self, fake_dataset, engine):
         labeled = engine.label(fake_dataset, {"everything": {}})
-        assert labeled["everything"].all()
+        assert labeled["everything"].not_().all()
 
     def test_true_rows_match_run_inclusion_only(self, fake_dataset, engine):
         labeled = engine.label(fake_dataset, {"dengue": self._dengue_def})
         via_label = labeled.filter(pl.col("dengue")).drop("dengue")
-        via_run = engine.run(fake_dataset, self._dengue_def)
+        via_run = engine.filter(fake_dataset, self._dengue_def)
         assert via_label.equals(via_run)
 
     def test_true_rows_match_run_exclusion_only(self, fake_dataset, engine):
         labeled = engine.label(fake_dataset, {"not_dengue": self._exclusion_def})
         via_label = labeled.filter(pl.col("not_dengue")).drop("not_dengue")
-        via_run = engine.run(fake_dataset, self._exclusion_def)
+        via_run = engine.filter(fake_dataset, self._exclusion_def)
         assert via_label.equals(via_run)
 
     def test_true_rows_match_run_inclusion_and_exclusion(self, fake_dataset, engine):
         labeled = engine.label(fake_dataset, {"influenza_young": self._mixed_def})
         via_label = labeled.filter(pl.col("influenza_young")).drop("influenza_young")
-        via_run = engine.run(fake_dataset, self._mixed_def)
+        via_run = engine.filter(fake_dataset, self._mixed_def)
         assert via_label.equals(via_run)
 
 
 class TestOSDEngine:
     def test_accepts_profile_data(self, profile):
         engine = OSDEngine(profile)
+        assert engine.columns == profile.columns
         assert engine.value_encodings == SEX_ENCODINGS
 
     def test_accepts_plain_column_list(self, all_columns):
         engine = OSDEngine(all_columns)
+        assert engine.columns == all_columns
         assert engine.value_encodings == {}
 
     def test_skip_unresolvable_defaults_to_false(self, profile):
@@ -730,7 +730,7 @@ class TestOSDEngine:
         assert engine.skip_unresolvable is False
 
     def test_filters_by_diagnosis_code(self, fake_dataset, engine):
-        osd = {
+        definition = {
             "inclusion_criteria": [
                 {
                     "type": "criterion",
@@ -750,12 +750,12 @@ class TestOSDEngine:
                 }
             ]
         }
-        result = engine.run(fake_dataset, osd)
+        result = engine.filter(fake_dataset, definition)
         assert result.height > 0
         assert result["icd_code"].is_in(["A90", "A91"]).all()
 
     def test_filters_by_demographic(self, fake_dataset, engine):
-        osd = {
+        definition = {
             "inclusion_criteria": [
                 {
                     "type": "demographic_criteria",
@@ -765,13 +765,14 @@ class TestOSDEngine:
                 },
             ]
         }
-        result = engine.run(fake_dataset, osd)
-        assert (result["age"] >= 18).all()
+        result = engine.filter(fake_dataset, definition)
+        assert result.height == 383
+        assert (result["age"].ge(18)).all()
 
     def test_canonical_sex_value_resolved_via_profile_encodings(
         self, fake_dataset, engine
     ):
-        osd = {
+        definition = {
             "inclusion_criteria": [
                 {
                     "type": "demographic_criteria",
@@ -781,17 +782,17 @@ class TestOSDEngine:
                 },
             ]
         }
-        result = engine.run(fake_dataset, osd)
+        result = engine.filter(fake_dataset, definition)
         assert result.height > 0
-        assert (result["sex"] == "F").all()
+        assert (result["sex"].eq("F")).all()
 
     def test_no_criteria_returns_full_dataframe(self, fake_dataset, engine):
-        assert engine.run(fake_dataset, {}).height == fake_dataset.height
+        assert engine.filter(fake_dataset, {}).height == fake_dataset.height
 
     def test_multiple_top_level_criteria_are_implicitly_anded(
         self, fake_dataset, engine
     ):
-        osd = {
+        definition = {
             "inclusion_criteria": [
                 {
                     "type": "demographic_criteria",
@@ -807,12 +808,12 @@ class TestOSDEngine:
                 },
             ]
         }
-        result = engine.run(fake_dataset, osd)
-        assert (result["sex"] == "F").all()
-        assert (result["age"] > 60).all()
+        result = engine.filter(fake_dataset, definition)
+        assert (result["sex"].eq("F")).all()
+        assert (result["age"].gt(60)).all()
 
     def test_exclusion_removes_matching_rows(self, fake_dataset, engine):
-        osd = {
+        definition = {
             "exclusion_criteria": [
                 {
                     "type": "demographic_criteria",
@@ -822,11 +823,11 @@ class TestOSDEngine:
                 },
             ],
         }
-        result = engine.run(fake_dataset, osd)
-        assert (result["sex"] != "F").all()
+        result = engine.filter(fake_dataset, definition)
+        assert (result["sex"].ne("F")).all()
 
     def test_inclusion_and_exclusion_combined(self, fake_dataset, engine):
-        osd = {
+        definition = {
             "inclusion_criteria": [
                 {
                     "type": "demographic_criteria",
@@ -844,12 +845,12 @@ class TestOSDEngine:
                 },
             ],
         }
-        result = engine.run(fake_dataset, osd)
-        assert (result["age"] >= 18).all()
-        assert (result["sex"] != "F").all()
+        result = engine.filter(fake_dataset, definition)
+        assert (result["age"].ge(18)).all()
+        assert (result["sex"].ne("F")).all()
 
     def test_only_exclusion_returns_subset_of_full_dataset(self, fake_dataset, engine):
-        osd = {
+        definition = {
             "exclusion_criteria": [
                 {
                     "type": "demographic_criteria",
@@ -859,45 +860,26 @@ class TestOSDEngine:
                 },
             ]
         }
-        result = engine.run(fake_dataset, osd)
-        assert result.height < fake_dataset.height
-        assert (result["age"] >= 18).all()
-
-    # skip un-resolvable
-    def test_skips_professional_judgment_and_applies_remaining(
-        self, fake_dataset, profile
-    ):
-        engine = OSDEngine(profile, skip_unresolvable=True)
-        osd = {
-            "inclusion_criteria": [
-                {"type": "professional_judgment", "name": "Clinical assessment"},
-                {
-                    "type": "demographic_criteria",
-                    "attribute": "age",
-                    "operator": ">",
-                    "value": 60,
-                },
-            ]
-        }
-        result = engine.run(fake_dataset, osd)
-        assert (result["age"] > 60).all()
+        result = engine.filter(fake_dataset, definition)
+        assert result.height == 383
+        assert (result["age"].ge(18)).all()
 
     def test_all_skipped_criteria_returns_full_dataframe(self, fake_dataset, profile):
         engine = OSDEngine(profile, skip_unresolvable=True)
-        osd = {
+        definition = {
             "inclusion_criteria": [
-                {"type": "professional_judgment", "name": "Clinical assessment"},
+                {"type": "unknown", "name": "Clinical assessment"},
             ]
         }
-        result = engine.run(fake_dataset, osd)
+        result = engine.filter(fake_dataset, definition)
         assert result.height == fake_dataset.height
 
     def test_raises_by_default(self, fake_dataset, profile):
         engine = OSDEngine(profile)
-        osd = {
+        definition = {
             "inclusion_criteria": [
-                {"type": "professional_judgment", "name": "Clinical assessment"},
+                {"type": "unknown", "name": "Clinical assessment"},
             ]
         }
         with pytest.raises(UnresolvableCriterion):
-            engine.run(fake_dataset, osd)
+            engine.filter(fake_dataset, definition)
