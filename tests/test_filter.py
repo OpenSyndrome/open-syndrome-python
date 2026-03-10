@@ -467,7 +467,6 @@ class TestBuildAttrExpr:
             _build_attr_expr(criterion, demographic_columns)
 
 
-# TODO
 class TestParseCriterion:
     def test_and_operator_requires_all_conditions(self, fake_dataset, all_columns):
         criterion = {
@@ -516,7 +515,6 @@ class TestParseCriterion:
         result_and = fake_dataset.filter(
             _parse_criterion({**base, "logical_operator": "AND"}, all_columns)
         )
-        # TODO
         assert result_or.height >= result_and.height
 
     def test_at_least_2_of_3_is_superset_of_and_all_3(self, fake_dataset, all_columns):
