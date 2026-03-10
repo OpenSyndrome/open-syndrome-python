@@ -171,12 +171,18 @@ def convert_to_text(json_file, model, language):
 
 @cli.command("download", help="Download an entity from OSI.")
 @click.argument("entity")
-def download_entity(entity):
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Force download even if already exists.",
+)
+def download_entity(entity, force):
     match entity:
         case "schema":
-            result = get_schema_filepath()
+            result = get_schema_filepath(force=force)
         case "definitions":
-            result = get_definition_dir()
+            result = get_definition_dir(force=force)
         case _:
             result = None
 
