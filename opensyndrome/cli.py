@@ -104,15 +104,32 @@ def check_ollama(func):
     type=str,
     help="Human-readable definition. If not provided, an editor will open to input the definition.",
 )
+@click.option(
+    "-hf",
+    "--human-readable-definition-file",
+    type=click.Path(exists=True),
+    help="Path to a TXT file containing the human-readable definition.",
+)
 @check_ollama
-def convert_to_json(validate, model, language, edit, human_readable_definition):
+def convert_to_json(
+    validate,
+    model,
+    language,
+    edit,
+    human_readable_definition,
+    human_readable_definition_file,
+):
     """
     Convert human-readable definition (TEXT) to the machine-readable format (JSON).
 
     If the --validate flag is passed, the JSON file will be validated against the schema.
     """
+    if human_readable_definition and human_readable_definition_file:
+        raise click.UsageError("Cannot use -hr and -hf at the same time.")
+    if human_readable_definition_file:
+        human_readable_definition = Path(human_readable_definition_file).read_text()
     if not human_readable_definition:
-        human_readable_definition = click.edit(extension=".json")
+        human_readable_definition = click.edit(extension=".txt")
     machine_readable_definition = generate_machine_readable_format(
         human_readable_definition, model, language
     )

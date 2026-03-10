@@ -54,8 +54,17 @@ We have tested llama3.2, mistral, and deepseek-r1 so far.
 
 Don't go well with structured output: qwen2.5-coder
 
+> If you do not pass `-hr` or `-hf`, an editor will open for you to enter the definition.
+
 ```bash
-opensyndrome convert
+# see some examples from ECDC: https://www.ecdc.europa.eu/en/all-topics/eu-case-definitions
+
+# pass the definition as inline text
+opensyndrome convert -hr "Any person with pneumonia"
+
+# pass the definition from a TXT file
+opensyndrome convert -hf definition.txt
+
 opensyndrome convert --model mistral
 
 # to have the JSON translated to a specific language and edit it just after conversion
@@ -76,7 +85,7 @@ opensyndrome humanize <path-to-json-file> --model mistral --language "Português
 ### Validate a machine-readable JSON syndrome definition
 
 ```bash
-opensyndrome validate
+opensyndrome validate <path-to-json-file>
 ```
 
 ## Development
