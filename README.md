@@ -7,9 +7,9 @@
 You can install it from PyPI or Docker. To use the conversion features,
 you will need to have [Ollama](https://github.com/ollama/ollama) installed.
 
-From PyPi, install the package with `pip install opensyndrome`. Then run it with `osi --help`.
+From PyPi, install the package with `pip install opensyndrome`. Then run it with `opensyndrome --help`.
 
-From Docker, you can run the following command to build the image, tagged `osi`:
+From Docker, you can run the following command to build the image, tagged `opensyndrome`:
 
 ```bash
 docker build -t opensyndrome .
@@ -40,8 +40,8 @@ docker run --name opensyndrome-cli -it opensyndrome
 First, download the schema and definitions in order to work with the CLI locally.
 
 ```bash
-osi download schema
-osi download definitions
+opensyndrome download schema
+opensyndrome download definitions
 ```
 
 The files will be placed in the folder `.open_syndrome` in `$HOME`.
@@ -49,34 +49,34 @@ The files will be placed in the folder `.open_syndrome` in `$HOME`.
 ### Convert a human-readable syndrome definition to a machine-readable JSON
 
 You need to have [Ollama](https://github.com/ollama/ollama) installed locally
-to use this feature. Pull the models you want to use with `osi` before running the command.
+to use this feature. Pull the models you want to use with `opensyndrome` before running the command.
 We have tested llama3.2, mistral, and deepseek-r1 so far.
 
 Don't go well with structured output: qwen2.5-coder
 
 ```bash
-osi convert
-osi convert --model mistral
+opensyndrome convert
+opensyndrome convert --model mistral
 
 # to have the JSON translated to a specific language and edit it just after conversion
-osi convert --language "Português do Brasil" --model mistral --edit
+opensyndrome convert --language "Português do Brasil" --model mistral --edit
 
 # include a validation step after conversion
-osi convert --validate
+opensyndrome convert --validate
 ```
 
 ### Convert a machine-readable JSON syndrome definition to a human-readable format
 
 ```bash
-osi humanize <path-to-json-file>
-osi humanize <path-to-json-file> --model mistral
-osi humanize <path-to-json-file> --model mistral --language "Português do Brasil"
+opensyndrome humanize <path-to-json-file>
+opensyndrome humanize <path-to-json-file> --model mistral
+opensyndrome humanize <path-to-json-file> --model mistral --language "Português do Brasil"
 ```
 
 ### Validate a machine-readable JSON syndrome definition
 
 ```bash
-osi validate
+opensyndrome validate
 ```
 
 ## Development
