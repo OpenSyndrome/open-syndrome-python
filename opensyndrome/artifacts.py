@@ -40,13 +40,13 @@ def download_definitions(url=None, current_path=None):
             download_definitions(item["url"], local_dir)
 
 
-def get_definition_dir():
-    if not any(DEFINITIONS_DIR.iterdir()):
+def get_definition_dir(force=False):
+    if force or not any(DEFINITIONS_DIR.iterdir()):
         download_definitions()
     return DEFINITIONS_DIR
 
 
-def get_schema_filepath():
-    if not SCHEMA_DIR.exists():
+def get_schema_filepath(force=False):
+    if force or not SCHEMA_DIR.exists():
         download_schema()
     return SCHEMA_DIR

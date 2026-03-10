@@ -19,7 +19,13 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - name: Generate changelog
+        id: changelog
+        uses: ardalanamini/auto-changelog@v4.0.6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-name: ${{ github.ref_name }}
+      - uses: astral-sh/setup-uv@v7
       - run: uv build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
