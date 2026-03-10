@@ -384,7 +384,7 @@ class OSDEngine:
     @staticmethod
     def display_expression(exprs):
         """Display expression tree."""
-        exprs.meta.tree_format()
+        return exprs.meta.tree_format(return_as_string=True)
 
     def label(
         self,
