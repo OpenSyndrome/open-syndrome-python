@@ -6,4 +6,4 @@ ADD . /app
 WORKDIR /app
 RUN uv sync
 
-ENTRYPOINT ["uv", "run", "osi"]
+ENTRYPOINT ["uv", "run", "opensyndrome"]
