@@ -177,3 +177,4 @@ opensyndrome/to_be_updated__schema.py
 
 # data
 *.csv
+!tests/fixtures/fake_dataset.csv

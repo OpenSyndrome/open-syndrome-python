@@ -16,6 +16,7 @@ dependencies = [
     "pyarrow>=20.0.0,<21",
     "ollama>=0.5.1,<0.6",
     "requests>=2.32.5",
+    "polars>=1.38.1",
 ]
 
 [project.scripts]

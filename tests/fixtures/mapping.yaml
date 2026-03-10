@@ -1,0 +1,18 @@
+profiles:
+- name: fake_dataset
+  value_encodings:
+    sex:
+      male: "M"
+      female: "F"
+  columns:
+    age:
+      concept: demographic_criteria
+      attribute: age
+      dtype: integer
+    sex:
+      concept: demographic_criteria
+      attribute: sex
+      dtype: string
+    icd_code:
+      concept: diagnosis
+      dtype: string
