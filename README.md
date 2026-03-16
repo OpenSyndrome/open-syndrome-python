@@ -4,8 +4,8 @@
 
 ## Installation
 
-You can install it from PyPI or Docker. To use the conversion features,
-you will need to have [Ollama](https://github.com/ollama/ollama) installed.
+You can install it from PyPI or Docker. By default, the conversion features use [Ollama](https://github.com/ollama/ollama) running locally.
+Cloud providers (OpenAI, Anthropic, Mistral, DeepSeek, Gemini) are also supported and require only an API key.
 
 From PyPi, install the package with `pip install opensyndrome`. Then run it with `opensyndrome --help`.
 
@@ -46,13 +46,32 @@ opensyndrome download definitions
 
 The files will be placed in the folder `.open_syndrome` in `$HOME`.
 
+### Providers and configuration
+
+The provider and model can be set via environment variables so you don't have to pass them on every command:
+
+```bash
+OPENSYNDROME_PROVIDER=ollama   # ollama (default), openai, anthropic, mistral, deepseek, gemini
+OPENSYNDROME_MODEL=mistral     # overrides the provider's default model
+```
+
+Copy `.env.example` to `.env` and fill in the relevant values:
+
+| Provider | Required env var | Default model |
+|----------|-----------------|---------------|
+| `ollama` | — (runs locally) | `mistral` |
+| `openai` | `OPENAI_API_KEY` | `gpt-4o` |
+| `anthropic` | `ANTHROPIC_API_KEY` | `claude-3-haiku-20240307` |
+| `mistral` | `MISTRAL_API_KEY` | `mistral-large-latest` |
+| `deepseek` | `DEEPSEEK_API_KEY` | `deepseek-chat` |
+| `gemini` | `GEMINI_API_KEY` | `gemini-1.5-flash` |
+
+For Ollama, the model must be pulled before use: `ollama pull mistral`. You can also override the Ollama base URL with `OLLAMA_BASE_URL`
+(default: `http://localhost:11434`).
+
+Ollama models tested: `llama3.2`, `mistral`, `deepseek-r1`. Known to not work well with structured output: `qwen2.5-coder`.
+
 ### Convert a human-readable syndrome definition to a machine-readable JSON
-
-You need to have [Ollama](https://github.com/ollama/ollama) installed locally
-to use this feature. Pull the models you want to use with `opensyndrome` before running the command.
-We have tested llama3.2, mistral, and deepseek-r1 so far.
-
-Don't go well with structured output: qwen2.5-coder
 
 > If you do not pass `-hr` or `-hf`, an editor will open for you to enter the definition.
 
@@ -65,10 +84,11 @@ opensyndrome convert -hr "Any person with pneumonia"
 # pass the definition from a TXT file
 opensyndrome convert -hf definition.txt
 
-opensyndrome convert --model mistral
+# use a specific provider and model
+opensyndrome convert -hr "Any person with pneumonia" --provider openai --model gpt-4o
 
 # to have the JSON translated to a specific language and edit it just after conversion
-opensyndrome convert --language "Português do Brasil" --model mistral --edit
+opensyndrome convert --language "Português do Brasil" --edit
 
 # include a validation step after conversion
 opensyndrome convert --validate
@@ -78,8 +98,8 @@ opensyndrome convert --validate
 
 ```bash
 opensyndrome humanize <path-to-json-file>
-opensyndrome humanize <path-to-json-file> --model mistral
-opensyndrome humanize <path-to-json-file> --model mistral --language "Português do Brasil"
+opensyndrome humanize <path-to-json-file> --provider anthropic
+opensyndrome humanize <path-to-json-file> --model mistral-large-latest --language "Português do Brasil"
 ```
 
 ### Validate a machine-readable JSON syndrome definition

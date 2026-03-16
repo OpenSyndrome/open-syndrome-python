@@ -1,19 +1,25 @@
 import json
 import logging
+import litellm
 from datetime import datetime
 from importlib.resources import files
 from pathlib import Path
 import random
 
 from dotenv import load_dotenv
-from ollama import chat
 
 from opensyndrome.artifacts import get_schema_filepath
 from opensyndrome.schema import OpenSyndromeCaseDefinitionSchema
+from opensyndrome.providers import (
+    DEFAULT_MODEL,
+    DEFAULT_PROVIDER,
+    build_model_string,
+    get_instructor_client,
+    get_litellm_kwargs,
+)
 
 load_dotenv()
 logger = logging.getLogger(__name__)
-DEFAULT_MODEL = "mistral"
 
 
 def load_examples(examples_dir: Path, random_k=None):
@@ -21,8 +27,8 @@ def load_examples(examples_dir: Path, random_k=None):
     for raw_json in examples_dir.glob("**/*"):
         if not raw_json.name.endswith(".json"):
             continue
-        if raw_json.read_text() != "":
-            content = json.loads(raw_json.read_text())
+        if raw_json.read_text(encoding="utf-8") != "":
+            content = json.loads(raw_json.read_text(encoding="utf-8"))
             if content:
                 json_definitions[raw_json.stem] = content
 
@@ -112,25 +118,11 @@ def _fill_automatic_fields(
     return machine_readable_definition
 
 
-def _drop_regex_pattern(node: dict):
-    """Recursively drop 'pattern' keys from the schema since it is not supported.
-
-    Issue: https://github.com/ollama/ollama-python/issues/541"""
-    original_node = node.copy()
-    dropped = node.pop("pattern", None)
-    if dropped is not None:
-        logger.warning(f"Dropped 'pattern' from {original_node}")
-    for value in node.values():
-        if isinstance(value, dict):
-            _drop_regex_pattern(value)
-        elif isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict):
-                    _drop_regex_pattern(item)
-
-
 def generate_machine_readable_format(
-    human_readable_definition, model=DEFAULT_MODEL, language="American English"
+    human_readable_definition,
+    model=DEFAULT_MODEL,
+    language="American English",
+    provider=DEFAULT_PROVIDER,
 ):
     if not human_readable_definition:
         raise ValueError("Human-readable definition cannot be empty.")
@@ -143,24 +135,19 @@ def generate_machine_readable_format(
         language=language,
     )
 
-    json_schema = OpenSyndromeCaseDefinitionSchema.model_json_schema()
-    _drop_regex_pattern(json_schema)
-    response = chat(
+    client = get_instructor_client(provider)
+    model_string = build_model_string(provider, model)
+    instance = client.chat.completions.create(
+        model=model_string,
         messages=[{"role": "user", "content": formatted_prompt}],
-        model=model,
-        format=json_schema,
-        options={"temperature": 0},
-        stream=False,
+        response_model=OpenSyndromeCaseDefinitionSchema,
+        temperature=0,
+        **get_litellm_kwargs(provider),
     )
 
-    machine_readable_definition = json.loads(response.message.content)
-    if isinstance(machine_readable_definition, list):
-        if len(machine_readable_definition) > 1:
-            logger.warning("More than one definition generated...")
-        machine_readable_definition = machine_readable_definition[0]
-
     return _fill_automatic_fields(
-        machine_readable_definition, human_readable_definition
+        instance.model_dump(exclude_none=True, by_alias=True, mode="json"),
+        human_readable_definition,
     )
 
 
@@ -175,7 +162,10 @@ def _exclude_metadata_fields(definition: dict):
 
 
 def generate_human_readable_format(
-    machine_readable_definition, model=DEFAULT_MODEL, language="American English"
+    machine_readable_definition,
+    model=DEFAULT_MODEL,
+    language="American English",
+    provider=DEFAULT_PROVIDER,
 ):
     if not machine_readable_definition:
         raise ValueError("Machine-readable definition cannot be empty.")
@@ -186,11 +176,11 @@ def generate_human_readable_format(
             machine_readable_definition
         ),
     )
-    response = chat(
+    model_string = build_model_string(provider, model)
+    response = litellm.completion(
+        model=model_string,
         messages=[{"role": "user", "content": formatted_prompt}],
-        model=model,
-        options={"temperature": 0},
-        stream=False,
+        temperature=0,
+        **get_litellm_kwargs(provider),
     )
-    human_readable_definition = response.message.content
-    return human_readable_definition
+    return response.choices[0].message.content
