@@ -14,7 +14,7 @@ PROVIDER_DEFAULT_MODELS = {
     "anthropic": "claude-3-haiku-20240307",
     "mistral": "mistral-large-latest",
     "deepseek": "deepseek-chat",
-    "gemini": "gemini-1.5-flash",
+    "gemini": "gemini-2.5-flash",
 }
 
 PROVIDER_MODEL_PREFIXES = {
@@ -37,7 +37,7 @@ PROVIDER_ENV_KEYS = {
 PROVIDER_INSTRUCTOR_MODES = {
     "ollama": instructor.Mode.JSON,
     "openai": instructor.Mode.TOOLS,
-    "anthropic": instructor.Mode.ANTHROPIC_TOOLS,
+    "anthropic": instructor.Mode.JSON,
     "mistral": instructor.Mode.JSON,
     "deepseek": instructor.Mode.JSON,
     "gemini": instructor.Mode.JSON,
