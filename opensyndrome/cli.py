@@ -5,6 +5,7 @@ from pathlib import Path
 from pygments import highlight, lexers, formatters
 import jsonschema
 import click
+from instructor.core.exceptions import InstructorRetryException
 
 from opensyndrome.converters import (
     generate_machine_readable_format,
@@ -58,6 +59,17 @@ def color_json(json_definition: dict):
     return highlight(formatted_json, lexers.JsonLexer(), formatters.TerminalFormatter())
 
 
+def _show_llm_error(exception: Exception, provider: str, model: str) -> None:
+    click.echo(
+        click.style(
+            f"❌ Request to LLM failed for {provider} {model} after {exception.n_attempts} attempts:\n"
+            f"Details: {exception.args[0].message}",
+            fg="red",
+        ),
+        err=True,
+    )
+
+
 def check_provider(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -66,7 +78,7 @@ def check_provider(func):
         available, message = check_provider_available(provider, model)
         if not available:
             click.echo(click.style(message, fg="red"), err=True)
-            return
+            raise click.Abort()
         return func(*args, **kwargs)
 
     return wrapper
@@ -136,9 +148,13 @@ def convert_to_json(
         human_readable_definition = click.edit(extension=".txt")
     resolved_model = build_model_string(provider, model)
     click.echo(click.style(f"Using {provider} / {resolved_model}", fg="cyan"), err=True)
-    machine_readable_definition = generate_machine_readable_format(
-        human_readable_definition, model, language, provider
-    )
+    try:
+        machine_readable_definition = generate_machine_readable_format(
+            human_readable_definition, model, language, provider
+        )
+    except InstructorRetryException as exception:
+        _show_llm_error(exception, provider, model)
+        return
 
     if edit:
         machine_readable_definition_edited = click.edit(
@@ -181,9 +197,13 @@ def convert_to_text(json_file, model, language, provider):
     resolved_model = build_model_string(provider, model)
     click.echo(click.style(f"Using {provider} / {resolved_model}", fg="cyan"), err=True)
     machine_readable_definition = json.loads(Path(json_file).read_text())
-    text = generate_human_readable_format(
-        machine_readable_definition, model, language, provider
-    )
+    try:
+        text = generate_human_readable_format(
+            machine_readable_definition, model, language, provider
+        )
+    except InstructorRetryException as exception:
+        _show_llm_error(exception, provider, model)
+        return
     click.echo(click.style(text, fg="green"))
 
 

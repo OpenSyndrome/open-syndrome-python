@@ -1,6 +1,8 @@
 from unittest.mock import Mock
 
 from click.testing import CliRunner
+from instructor.core.exceptions import InstructorRetryException, FailedAttempt
+import litellm
 
 from opensyndrome.cli import cli
 import pytest
@@ -164,6 +166,76 @@ class TestConvertToJson:
             return_value=(False, "Ollama service is missing or unavailable."),
         )
         result = runner.invoke(cli, ["convert", "-hr", "Any person with pneumonia"])
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         assert "Ollama service is missing or unavailable." in result.output
         mock_convert.assert_not_called()
+
+    def test_convert_shows_friendly_error_on_auth_failure(
+        self, runner, mock_provider_available, mocker
+    ):
+        auth_error = litellm.AuthenticationError(
+            message="Unauthorized", llm_provider="mistral", model="mistral-large-latest"
+        )
+        retry_exc = InstructorRetryException(
+            n_attempts=3,
+            total_usage=0,
+            failed_attempts=[
+                FailedAttempt(attempt_number=1, exception=auth_error),
+                FailedAttempt(attempt_number=2, exception=auth_error),
+                FailedAttempt(attempt_number=3, exception=auth_error),
+            ],
+        )
+        mocker.patch(
+            "opensyndrome.cli.generate_machine_readable_format",
+            side_effect=retry_exc,
+        )
+        result = runner.invoke(cli, ["convert", "-hr", "Any person with pneumonia"])
+        assert result.exit_code == 1
+
+    def test_convert_shows_friendly_error_on_rate_limit(
+        self, runner, mock_provider_available, mocker
+    ):
+        mocker.patch(
+            "opensyndrome.cli.generate_machine_readable_format",
+            side_effect=litellm.RateLimitError(
+                message="Rate limit", llm_provider="openai", model="gpt-4o"
+            ),
+        )
+        result = runner.invoke(
+            cli,
+            ["convert", "-hr", "Any person with pneumonia", "--provider", "openai"],
+        )
+        assert result.exit_code == 1
+
+
+class TestConvertToText:
+    @pytest.fixture(autouse=True)
+    def isolate_env(self, mocker):
+        mocker.patch.dict(
+            "os.environ", {"OPENSYNDROME_PROVIDER": "ollama"}, clear=False
+        )
+
+    @pytest.fixture
+    def runner(self):
+        return CliRunner(env={"OPENSYNDROME_PROVIDER": "ollama"})
+
+    @pytest.fixture
+    def mock_provider_available(self, mocker):
+        mocker.patch(
+            "opensyndrome.cli.check_provider_available", return_value=(True, "")
+        )
+
+    def test_humanize_shows_friendly_error_on_auth_failure(
+        self, runner, mock_provider_available, mocker, tmp_path
+    ):
+        json_file = tmp_path / "definition.json"
+        json_file.write_text('{"name": "Pneumonia"}')
+        auth_error = litellm.AuthenticationError(
+            message="Unauthorized", llm_provider="mistral", model="mistral-large-latest"
+        )
+        mocker.patch(
+            "opensyndrome.cli.generate_human_readable_format",
+            side_effect=auth_error,
+        )
+        result = runner.invoke(cli, ["humanize", str(json_file)])
+        assert result.exit_code == 1
