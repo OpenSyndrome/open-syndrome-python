@@ -5,8 +5,6 @@ from pathlib import Path
 from pygments import highlight, lexers, formatters
 import jsonschema
 import click
-import ollama
-from ollama._types import ResponseError
 
 from opensyndrome.converters import (
     generate_machine_readable_format,
@@ -14,6 +12,12 @@ from opensyndrome.converters import (
 )
 from opensyndrome.artifacts import get_schema_filepath, get_definition_dir
 from opensyndrome.validators import validate_machine_readable_format
+from opensyndrome.providers import (
+    build_model_string,
+    check_provider_available,
+    DEFAULT_PROVIDER,
+    SUPPORTED_PROVIDERS,
+)
 
 
 @click.group()
@@ -54,25 +58,16 @@ def color_json(json_definition: dict):
     return highlight(formatted_json, lexers.JsonLexer(), formatters.TerminalFormatter())
 
 
-def is_ollama_available():
-    try:
-        ollama.list()
-        return True
-    except (ConnectionError, ResponseError):
-        return False
-
-
-def check_ollama(func):
+def check_provider(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if not is_ollama_available():
-            click.echo(
-                click.style("Ollama service is missing or unavailable.", fg="red"),
-                err=True,
-            )
+        provider = kwargs.get("provider", DEFAULT_PROVIDER)
+        model = kwargs.get("model", "mistral")
+        available, message = check_provider_available(provider, model)
+        if not available:
+            click.echo(click.style(message, fg="red"), err=True)
             return
-        else:
-            return func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     return wrapper
 
@@ -84,8 +79,9 @@ def check_ollama(func):
 @click.option(
     "--model",
     type=str,
-    help="Model used to generate the JSON file.",
-    default="mistral",
+    help="Model to use. Defaults per provider: ollama=mistral, openai=gpt-4o, anthropic=claude-3-haiku-20240307, mistral=mistral-large-latest, deepseek=deepseek-chat, gemini=gemini-1.5-flash.",
+    default=None,
+    envvar="OPENSYNDROME_MODEL",
 )
 @click.option(
     "--language",
@@ -110,7 +106,14 @@ def check_ollama(func):
     type=click.Path(exists=True),
     help="Path to a TXT file containing the human-readable definition.",
 )
-@check_ollama
+@click.option(
+    "--provider",
+    type=click.Choice(SUPPORTED_PROVIDERS),
+    default=DEFAULT_PROVIDER,
+    envvar="OPENSYNDROME_PROVIDER",
+    help="LLM provider to use.",
+)
+@check_provider
 def convert_to_json(
     validate,
     model,
@@ -118,6 +121,7 @@ def convert_to_json(
     edit,
     human_readable_definition,
     human_readable_definition_file,
+    provider,
 ):
     """
     Convert human-readable definition (TEXT) to the machine-readable format (JSON).
@@ -130,8 +134,10 @@ def convert_to_json(
         human_readable_definition = Path(human_readable_definition_file).read_text()
     if not human_readable_definition:
         human_readable_definition = click.edit(extension=".txt")
+    resolved_model = build_model_string(provider, model)
+    click.echo(click.style(f"Using {provider} / {resolved_model}", fg="cyan"), err=True)
     machine_readable_definition = generate_machine_readable_format(
-        human_readable_definition, model, language
+        human_readable_definition, model, language, provider
     )
 
     if edit:
@@ -152,8 +158,9 @@ def convert_to_json(
 @click.option(
     "--model",
     type=str,
-    help="Model used to generate the JSON file.",
-    default="mistral",
+    help="Model to use. Defaults per provider: ollama=mistral, openai=gpt-4o, anthropic=claude-3-haiku-20240307, mistral=mistral-large-latest, deepseek=deepseek-chat, gemini=gemini-1.5-flash.",
+    default=None,
+    envvar="OPENSYNDROME_MODEL",
 )
 @click.option(
     "--language",
@@ -161,11 +168,22 @@ def convert_to_json(
     help="Language used to generate the human-readable definition.",
     default="American English",
 )
-@check_ollama
-def convert_to_text(json_file, model, language):
+@click.option(
+    "--provider",
+    type=click.Choice(SUPPORTED_PROVIDERS),
+    default=DEFAULT_PROVIDER,
+    envvar="OPENSYNDROME_PROVIDER",
+    help="LLM provider to use.",
+)
+@check_provider
+def convert_to_text(json_file, model, language, provider):
     """Convert a machine-readable format (JSON) to a human-readable format (TEXT)."""
+    resolved_model = build_model_string(provider, model)
+    click.echo(click.style(f"Using {provider} / {resolved_model}", fg="cyan"), err=True)
     machine_readable_definition = json.loads(Path(json_file).read_text())
-    text = generate_human_readable_format(machine_readable_definition, model, language)
+    text = generate_human_readable_format(
+        machine_readable_definition, model, language, provider
+    )
     click.echo(click.style(text, fg="green"))
 
 
