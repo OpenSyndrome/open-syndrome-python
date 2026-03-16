@@ -27,8 +27,8 @@ def load_examples(examples_dir: Path, random_k=None):
     for raw_json in examples_dir.glob("**/*"):
         if not raw_json.name.endswith(".json"):
             continue
-        if raw_json.read_text() != "":
-            content = json.loads(raw_json.read_text())
+        if raw_json.read_text(encoding="utf-8") != "":
+            content = json.loads(raw_json.read_text(encoding="utf-8"))
             if content:
                 json_definitions[raw_json.stem] = content
 
