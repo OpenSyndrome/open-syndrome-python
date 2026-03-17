@@ -1,6 +1,8 @@
 {
-  "title": "Open Syndrome Cold Exposure",
-  "description": "Case definition for suspected cold exposure in individuals with history of extreme cold exposure during Early Temperature Extreme Alert by National Meteorological Service, and clinical symptoms attributable to low body temperature (36°C or lower) and 2 or more of the following: shivering, altered consciousness, weak pulse, slow breathing, local tissue damage due to freezing.",
+  "id": "https://opensyndrome.org/definitions/extremetemperaturesheat_argentina_1.0.0",
+  "@type": "osd:CaseDefinition",
+  "title": "Heat Exposure",
+  "description": "Case definition for suspected heat exposure in individuals with history of extreme heat exposure during Early Temperature Extreme Alert by National Meteorological Service, and clinical symptoms attributable to high body temperature (39°C or higher) and 2 or more of the following: sweating, nausea/vomiting, hypotension, tachycardia, tachypnea, altered consciousness, seizures, fainting. In infants: excessive sweating, irritated skin due to sweating.",
   "scope": "specific",
   "category": "suspected",
   "version": "1.0.0",
@@ -14,11 +16,73 @@
       "logical_operator": "AND",
       "values": [
         {
-          "type": "diagnosis",
-          "code": {
-            "system": "ICD-10",
-            "code": "X31"
-          }
+          "type": "symptom",
+          "name": "High body temperature",
+          "attribute": "body_temperature",
+          "operator": ">=",
+          "value": 39,
+          "description": "Temperature measured in celsius",
+          "ontology_id": "hpo:0002045"
+        },
+        {
+          "type": "criterion",
+          "logical_operator": "AT_LEAST",
+          "logical_operator_arguments": [
+            2
+          ],
+          "values": [
+            {
+              "type": "symptom",
+              "name": "Warm skin",
+              "ontology_id": "hpo:0032506"
+            },
+            {
+              "type": "symptom",
+              "name": "Sweating",
+              "ontology_id": "hpo:0000975"
+            },
+            {
+              "type": "symptom",
+              "name": "Nausea/vomiting",
+              "ontology_id": "hpo:0002017"
+            },
+            {
+              "type": "symptom",
+              "name": "Hypotension",
+              "ontology_id": "hpo:0002615"
+            },
+            {
+              "type": "symptom",
+              "name": "Tachycardia",
+              "ontology_id": "hpo:0001649"
+            },
+            {
+              "type": "symptom",
+              "name": "Tachypnea",
+              "ontology_id": "hpo:0002789"
+            },
+            {
+              "type": "symptom",
+              "name": "Altered consciousness",
+              "ontology_id": "hpo:0004372"
+            },
+            {
+              "type": "symptom",
+              "name": "Seizures",
+              "ontology_id": "hpo:0001250"
+            },
+            {
+              "type": "symptom",
+              "name": "Fainting",
+              "ontology_id": "hpo:0001279"
+            },
+            {
+              "type": "symptom",
+              "name": "Excessive sweating (infants)",
+              "description": "Irritated skin due to sweating (infants)",
+              "ontology_id": "hpo:0000975"
+            }
+          ]
         }
       ]
     }
@@ -29,7 +93,7 @@
     "Open Syndrome Initiative"
   ],
   "notes": [
-    "ICD-10 code COLD: X31 (Exposure to excessive natural cold)"
+    "ICD-10 code HEAT: X30 (Exposure to excessive natural heat), T67 (Effects of heat and light)"
   ],
   "references": [
     {
@@ -37,8 +101,16 @@
     }
   ],
   "status": "draft",
-  "human_readable_definition": "",
-  "target_public_health_threats": [],
-  "keywords": [],
-  "definition_type": "case_definition"
+  "human_readable_definition": "Toda persona con antecedentes de\nexposición a calor extremo en circunstancia de Alerta Temprana por Temperatura\nExtrema (calor) del Servicio Meteorológico Nacional, y sintomatología clínica\natribuible - Temperatura corporal mayor o igual a 39 ºC y 2 o más de los siguientes\nsíntomas, a saber:\nSignos y síntomas atribuibles: piel caliente, sudoración abundante en un primer\nmomento o escasa, náuseas y/o vómitos, hipotensión, taquicardia y taquipnea,\nalteración del estado de conciencia, convulsiones, desmayo. En bebés: sudoración\nabundante, piel irritada por sudor.",
+  "target_public_health_threats": [
+    "Heat",
+    "mondo:0020674"
+  ],
+  "keywords": [
+    "Heat",
+    "South America",
+    "Climate-related"
+  ],
+  "definition_type": "case_definition",
+  "@context": "https://opensyndrome.org/schema/v1/context.jsonld"
 }
