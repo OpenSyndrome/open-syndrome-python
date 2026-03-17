@@ -16,6 +16,7 @@ from opensyndrome.filter import (
     _build_code_expr,
     _build_text_expr,
     _build_attr_expr,
+    _build_ontology_id_expr,
     _parse_criterion,
 )
 
@@ -393,6 +394,68 @@ class TestBuildTextExpr:
             _build_text_expr(criterion, icd_columns, "epidemiological_history")
 
 
+class TestBuildOntologyIdExpr:
+    @pytest.fixture
+    def ontology_df(self):
+        return pl.DataFrame(
+            {"phenotype": ["hpo:0002045", "hpo:0000975", "hpo:0001649", None]}
+        )
+
+    @pytest.fixture
+    def symptom_columns(self):
+        return [ColumnSpec("phenotype", concept="symptom")]
+
+    def test_matches_exact_ontology_id(self, ontology_df, symptom_columns):
+        criterion = {
+            "type": "symptom",
+            "name": "Hyperthermia",
+            "ontology_id": "hpo:0002045",
+        }
+        result = ontology_df.filter(
+            _build_ontology_id_expr(criterion, symptom_columns, "symptom")
+        )
+        assert result.height == 1
+        assert result["phenotype"][0] == "hpo:0002045"
+
+    def test_no_match_returns_empty(self, ontology_df, symptom_columns):
+        criterion = {"type": "symptom", "name": "Unknown", "ontology_id": "hpo:9999999"}
+        result = ontology_df.filter(
+            _build_ontology_id_expr(criterion, symptom_columns, "symptom")
+        )
+        assert result.is_empty()
+
+    def test_matching_is_case_insensitive(self, symptom_columns):
+        df = pl.DataFrame({"phenotype": ["HPO:0002045", "hpo:0000975"]})
+        criterion = {"type": "symptom", "ontology_id": "hpo:0002045"}
+        result = df.filter(
+            _build_ontology_id_expr(criterion, symptom_columns, "symptom")
+        )
+        assert result.height == 1
+        assert result["phenotype"][0] == "HPO:0002045"
+
+    def test_matches_across_multiple_columns(self):
+        df = pl.DataFrame(
+            {
+                "phenotype_1": ["hpo:0002045", "hpo:0000001"],
+                "phenotype_2": ["hpo:0000001", "hpo:0001649"],
+            }
+        )
+        columns = [
+            ColumnSpec("phenotype_1", concept="symptom"),
+            ColumnSpec("phenotype_2", concept="symptom"),
+        ]
+        criterion = {"type": "symptom", "ontology_id": "hpo:0001649"}
+        result = df.filter(_build_ontology_id_expr(criterion, columns, "symptom"))
+        assert result.height == 1
+        assert result["phenotype_2"][0] == "hpo:0001649"
+
+    def test_raises_when_no_column_mapped_to_concept(self):
+        columns = [ColumnSpec("icd_code", concept="diagnosis")]
+        criterion = {"type": "symptom", "ontology_id": "hpo:0002045"}
+        with pytest.raises(UnresolvableCriterion, match="symptom"):
+            _build_ontology_id_expr(criterion, columns, "symptom")
+
+
 class TestBuildAttrExpr:
     def test_numeric_greater_than(self, fake_dataset, demographic_columns):
         assert (fake_dataset["age"] > 60).sum() == 190  # expected value
@@ -623,6 +686,31 @@ class TestParseCriterion:
         }
         result = fake_dataset.filter(_parse_criterion(criterion, columns))
         assert (result["age"].le(14)).all()
+
+    def test_ontology_id_routes_to_ontology_expr(self):
+        df = pl.DataFrame({"phenotype": ["hpo:0002045", "hpo:0000975", "hpo:0001649"]})
+        columns = [ColumnSpec("phenotype", concept="symptom")]
+        criterion = {
+            "type": "symptom",
+            "name": "Tachycardia",
+            "ontology_id": "hpo:0001649",
+        }
+        result = df.filter(_parse_criterion(criterion, columns))
+        assert result.height == 1
+        assert result["phenotype"][0] == "hpo:0001649"
+
+    def test_ontology_id_takes_precedence_over_text_matching(self):
+        # Column contains ontology IDs; name would not match, ontology_id does
+        df = pl.DataFrame({"phenotype": ["hpo:0001649", "Frankfurt"]})
+        columns = [ColumnSpec("phenotype", concept="symptom")]
+        criterion = {
+            "type": "symptom",
+            "name": "Frankfurt",
+            "ontology_id": "hpo:0001649",
+        }
+        result = df.filter(_parse_criterion(criterion, columns))
+        assert result.height == 1
+        assert result["phenotype"][0] == "hpo:0001649"
 
     def test_syndrome_type_raises(self, all_columns):
         with pytest.raises(UnresolvableCriterion, match="syndrome"):

@@ -229,6 +229,28 @@ def _build_text_expr(
     return pl.any_horizontal(exprs)
 
 
+def _build_ontology_id_expr(
+    criterion: dict, columns: list[ColumnSpec], concept: str
+) -> pl.Expr:
+    """Build a Polars expression matching a criterion's ``ontology_id`` against text columns.
+
+    Searches all columns mapped to concept for the exact ``ontology_id`` value.
+    Matching is case-insensitive to tolerate prefix casing differences (e.g.
+    ``HP:0002045`` vs ``hp:0002045``).
+
+    Raises :exc:`UnresolvableCriterion` if no column is mapped to *concept*.
+    """
+    ontology_id = criterion.get("ontology_id", "")
+    matching_cols = [column for column in columns if column.concept == concept]
+    if not matching_cols:
+        raise UnresolvableCriterion(f"No column mapped to concept '{concept}'.")
+    exprs = [
+        pl.col(column.col_name).str.to_lowercase().eq(ontology_id.lower())
+        for column in matching_cols
+    ]
+    return pl.any_horizontal(exprs)
+
+
 def _build_attr_expr(
     criterion: dict,
     columns: list[ColumnSpec],
@@ -320,6 +342,9 @@ def _parse_criterion(
     # (e.g. body_temperature >= 39); otherwise match by name/regex against text columns.
     if "attribute" in criterion and "operator" in criterion:
         return _build_attr_expr(criterion, columns, value_encodings, df_schema)
+
+    if "ontology_id" in criterion and ctype in _VALID_CONCEPTS:
+        return _build_ontology_id_expr(criterion, columns, ctype)
 
     if ctype in _VALID_CONCEPTS:
         return _build_text_expr(criterion, columns, ctype)
