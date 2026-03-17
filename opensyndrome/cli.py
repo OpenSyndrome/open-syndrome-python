@@ -11,6 +11,7 @@ from opensyndrome.converters import (
     generate_machine_readable_format,
     generate_human_readable_format,
 )
+from opensyndrome.ontology import enrich_definition
 from opensyndrome.artifacts import get_schema_filepath, get_definition_dir
 from opensyndrome.validators import validate_machine_readable_format
 from opensyndrome.providers import (
@@ -107,6 +108,11 @@ def check_provider(func):
     help="Open editor after generation.",
 )
 @click.option(
+    "--enrich-ontology / --no-enrich-ontology",
+    default=False,
+    help="Post-process output to populate ontology IDs via EBI OLS4.",
+)
+@click.option(
     "-hr",
     "--human-readable-definition",
     type=str,
@@ -131,6 +137,7 @@ def convert_to_json(
     model,
     language,
     edit,
+    enrich_ontology,
     human_readable_definition,
     human_readable_definition_file,
     provider,
@@ -155,6 +162,20 @@ def convert_to_json(
     except InstructorRetryException as exception:
         _show_llm_error(exception, provider, model)
         return
+
+    if enrich_ontology:
+        click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
+
+        def _progress(name, curie):
+            click.echo(
+                click.style(f"  {name} → {curie}"),
+                err=True,
+            )
+
+        machine_readable_definition = enrich_definition(
+            machine_readable_definition,
+            verbose_callback=_progress,
+        )
 
     if edit:
         machine_readable_definition_edited = click.edit(

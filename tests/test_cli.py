@@ -192,6 +192,27 @@ class TestConvertToJson:
         result = runner.invoke(cli, ["convert", "-hr", "Any person with pneumonia"])
         assert result.exit_code == 1
 
+    def test_convert_with_enrich_ontology_calls_enrich(
+        self, runner, mock_convert, mock_provider_available, mocker
+    ):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"name": "Pneumonia"},
+        )
+        result = runner.invoke(
+            cli, ["convert", "-hr", "Any person with pneumonia", "--enrich-ontology"]
+        )
+        assert result.exit_code == 0
+        mock_enrich.assert_called_once()
+
+    def test_convert_without_enrich_ontology_skips_enrich(
+        self, runner, mock_convert, mock_provider_available, mocker
+    ):
+        mock_enrich = mocker.patch("opensyndrome.cli.enrich_definition")
+        result = runner.invoke(cli, ["convert", "-hr", "Any person with pneumonia"])
+        assert result.exit_code == 0
+        mock_enrich.assert_not_called()
+
     def test_convert_shows_friendly_error_on_rate_limit(
         self, runner, mock_provider_available, mocker
     ):
