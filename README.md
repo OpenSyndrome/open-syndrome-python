@@ -94,6 +94,31 @@ opensyndrome convert --language "Português do Brasil" --edit
 opensyndrome convert --validate
 ```
 
+### Enrich ontology IDs on a JSON definition
+
+The `enrich` command populates `ontology_id` fields on criteria nodes and sets the `@context` to the OpenSyndrome JSON-LD context URL. It queries [EBI OLS4](https://www.ebi.ac.uk/ols4) by default, or [text2term](https://ccb-hms.github.io/ontology-mapper/) as an alternative mapper.
+
+```bash
+# enrich an existing JSON definition (uses OLS4 by default)
+opensyndrome enrich definition.json
+
+# use text2term instead (requires: pip install text2term)
+opensyndrome enrich definition.json --mapper text2term
+
+# review and adjust the result in an editor before printing
+opensyndrome enrich definition.json --edit
+
+# enrich and validate in one step
+opensyndrome enrich definition.json --validate
+```
+
+You can also enrich directly after conversion:
+
+```bash
+opensyndrome convert -hr "Any person with fever and rash" --enrich-ontology
+opensyndrome convert -hr "Any person with fever and rash" --enrich-ontology --mapper text2term
+```
+
 ### Convert a machine-readable JSON syndrome definition to a human-readable format
 
 ```bash
