@@ -25,7 +25,7 @@ def _pick_best(docs: list[dict], name: str) -> str | None:
             return doc["short_form"].replace("_", ":", 1)
     for doc in docs:
         score = doc.get("score")
-        if score is None or float(score) >= MIN_SCORE:
+        if score is not None and float(score) >= MIN_SCORE:
             return doc["short_form"].replace("_", ":", 1)
     return None
 
@@ -80,6 +80,8 @@ def _apply_mapping(
 ) -> None:
     for criterion in criteria:
         _apply_mapping(criterion.get("values", []), mapping, verbose_callback)
+        if criterion.get("type") in SKIP_TYPES:
+            continue
         name = criterion.get("name", "")
         if name in mapping:
             criterion["ontology_id"] = mapping[name]

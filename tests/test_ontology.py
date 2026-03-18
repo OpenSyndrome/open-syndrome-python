@@ -104,6 +104,13 @@ class TestApplyMapping:
         _apply_mapping(criteria, {"Fever": "HP:0001945"})
         assert child["ontology_id"] == "HP:0001945"
 
+    def test_skips_container_types(self):
+        child = {"type": "symptom", "name": "Fever"}
+        container = {"type": "criterion", "name": "Fever", "values": [child]}
+        _apply_mapping([container], {"Fever": "HP:0001945"})
+        assert "ontology_id" not in container
+        assert child["ontology_id"] == "HP:0001945"
+
 
 class TestPickBest:
     def test_exact_match_wins(self):
@@ -122,9 +129,9 @@ class TestPickBest:
         docs = [{"label": "Something", "short_form": "HP_0001945", "score": 1.0}]
         assert _pick_best(docs, "other") is None
 
-    def test_none_score_is_accepted(self):
+    def test_none_score_returns_none(self):
         docs = [{"label": "Skin rash", "short_form": "HP_0000988", "score": None}]
-        assert _pick_best(docs, "other") == "HP:0000988"
+        assert _pick_best(docs, "other") is None
 
     def test_empty_docs_returns_none(self):
         assert _pick_best([], "Fever") is None
