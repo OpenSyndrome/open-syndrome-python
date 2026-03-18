@@ -8,6 +8,7 @@ OLS4_SEARCH_URL = "https://www.ebi.ac.uk/ols4/api/search"
 OPENSYNDROME_CONTEXT_URL = "https://opensyndrome.org/schema/v1/context.jsonld"
 SKIP_TYPES = {"criterion", "demographic_criteria"}
 MIN_SCORE = 5.0
+TEXT2TERM_MIN_SCORE = 0.5
 
 CRITERION_TYPE_ONTOLOGIES = {
     "symptom": ["mondo", "hp"],
@@ -17,6 +18,8 @@ CRITERION_TYPE_ONTOLOGIES = {
     "epidemiological_history": ["hp", "efo"],
     "professional_judgment": ["hp", "efo"],
 }
+
+MAPPERS = ("ols", "text2term")
 
 
 def _pick_best(docs: list[dict], name: str) -> str | None:
@@ -58,6 +61,39 @@ def _search_ols(name: str, ontologies: list[str], timeout: int = 10) -> str | No
         return None
 
 
+def _iri_to_curie(iri: str) -> str:
+    """Convert an OBO IRI to a CURIE. e.g. http://purl.obolibrary.org/obo/HP_0001945 → HP:0001945"""
+    local = iri.rstrip("/").rsplit("/", 1)[-1]
+    return local.replace("_", ":", 1)
+
+
+def _search_text2term(
+    name: str, ontologies: list[str], min_score: float = TEXT2TERM_MIN_SCORE
+) -> str | None:
+    try:
+        import text2term
+    except ImportError:
+        raise ImportError("text2term is not installed. Run: pip install text2term")
+
+    for ontology in ontologies:
+        try:
+            df = text2term.map_terms(
+                source_terms=[name],
+                target_ontology=ontology.upper(),
+                max_mappings=1,
+                min_score=min_score,
+                # use_cache=True,
+                excl_deprecated=True,
+            )
+            if not df.empty:
+                return _iri_to_curie(df.iloc[0]["Mapped Term IRI"])
+        except Exception as exc:
+            logger.warning(
+                "text2term search failed for %r with %s: %s", name, ontology, exc
+            )
+    return None
+
+
 def _collect_enrichable(criteria: list[dict]) -> list[dict]:
     result = []
     for criterion in criteria:
@@ -92,8 +128,16 @@ def _apply_mapping(
 def enrich_definition(
     definition: dict,
     *,
+    mapper: str = "ols",
     verbose_callback=None,
 ) -> dict:
+    if mapper not in MAPPERS:
+        raise ValueError(
+            f"Unknown mapper {mapper!r}. Choose from: {', '.join(MAPPERS)}"
+        )
+
+    search_fn = _search_ols if mapper == "ols" else _search_text2term
+
     inclusion_criteria = definition.get("inclusion_criteria") or []
     exclusion_criteria = definition.get("exclusion_criteria") or []
     definition["@context"] = OPENSYNDROME_CONTEXT_URL
@@ -106,7 +150,7 @@ def enrich_definition(
         name = criterion["name"]
         type_ = criterion["type"]
         ontologies = CRITERION_TYPE_ONTOLOGIES.get(type_, ["hp", "efo", "mondo"])
-        curie = _search_ols(name, ontologies)
+        curie = search_fn(name, ontologies)
         if curie:
             mapping[name] = curie
 

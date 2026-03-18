@@ -1,13 +1,17 @@
+import sys
 from unittest.mock import MagicMock, patch
 
+import pytest
 import requests
 
 from opensyndrome.ontology import (
     OPENSYNDROME_CONTEXT_URL,
     _apply_mapping,
     _collect_enrichable,
+    _iri_to_curie,
     _pick_best,
     _search_ols,
+    _search_text2term,
     enrich_definition,
 )
 
@@ -21,6 +25,93 @@ def _ols_response(label: str, short_form: str, score: float = 10.0) -> MagicMock
         }
     }
     return mock
+
+
+class TestIriToCurie:
+    def test_obo_iri(self):
+        assert (
+            _iri_to_curie("http://purl.obolibrary.org/obo/HP_0001945") == "HP:0001945"
+        )
+
+    def test_efo_iri(self):
+        assert _iri_to_curie("http://www.ebi.ac.uk/efo/EFO_0003900") == "EFO:0003900"
+
+    def test_mondo_iri(self):
+        assert (
+            _iri_to_curie("http://purl.obolibrary.org/obo/MONDO_0005148")
+            == "MONDO:0005148"
+        )
+
+
+def _make_text2term_module(map_terms_return=None, map_terms_side_effect=None):
+    """Build a fake text2term module for injection into sys.modules."""
+    fake = MagicMock()
+    if map_terms_side_effect is not None:
+        fake.map_terms.side_effect = map_terms_side_effect
+    else:
+        fake.map_terms.return_value = map_terms_return
+    return fake
+
+
+class _FakeDF:
+    """Minimal DataFrame stand-in for text2term output."""
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    @property
+    def empty(self):
+        return len(self._rows) == 0
+
+    @property
+    def iloc(self):
+        return self._rows
+
+
+_EMPTY_DF = _FakeDF([])
+
+
+def _ols_df(iri: str, score: float = 0.9) -> _FakeDF:
+    return _FakeDF([{"Mapped Term IRI": iri, "Mapping Score": score}])
+
+
+class TestSearchText2term:
+    @pytest.fixture(autouse=True)
+    def inject_text2term(self, request):
+        """Ensure text2term is removed from sys.modules between tests."""
+        sys.modules.pop("text2term", None)
+        yield
+        sys.modules.pop("text2term", None)
+
+    def test_returns_curie_on_match(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_return=_ols_df("http://purl.obolibrary.org/obo/HP_0001945")
+        )
+        assert _search_text2term("Fever", ["hp"]) == "HP:0001945"
+
+    def test_tries_next_ontology_on_empty(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_side_effect=[
+                _EMPTY_DF,
+                _ols_df("http://purl.obolibrary.org/obo/MONDO_0005148"),
+            ]
+        )
+        assert _search_text2term("Dengue", ["hp", "mondo"]) == "MONDO:0005148"
+
+    def test_returns_none_when_all_empty(self):
+        sys.modules["text2term"] = _make_text2term_module(map_terms_return=_EMPTY_DF)
+        assert _search_text2term("Unknown", ["hp"]) is None
+
+    def test_returns_none_on_exception(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_side_effect=Exception("network error")
+        )
+        assert _search_text2term("Fever", ["hp"]) is None
+
+    def test_raises_on_missing_library(self):
+        sys.modules["text2term"] = None
+        with pytest.raises(ImportError, match="text2term is not installed"):
+            _search_text2term("Fever", ["hp"])
 
 
 class TestCollectEnrichable:
@@ -247,3 +338,16 @@ class TestEnrichDefinition:
         )
         _, ontologies = mock_search.call_args.args
         assert ontologies == ["mondo", "efo"]
+
+    def test_uses_text2term_mapper(self, mocker):
+        mock_search = mocker.patch(
+            "opensyndrome.ontology._search_text2term", return_value="HP:0001945"
+        )
+        criterion = {"type": "symptom", "name": "Fever"}
+        enrich_definition({"inclusion_criteria": [criterion]}, mapper="text2term")
+        mock_search.assert_called_once()
+        assert criterion["ontology_id"] == "HP:0001945"
+
+    def test_invalid_mapper_raises(self):
+        with pytest.raises(ValueError, match="Unknown mapper"):
+            enrich_definition({"inclusion_criteria": []}, mapper="unknown")

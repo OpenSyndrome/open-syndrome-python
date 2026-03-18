@@ -11,7 +11,7 @@ from opensyndrome.converters import (
     generate_machine_readable_format,
     generate_human_readable_format,
 )
-from opensyndrome.ontology import enrich_definition
+from opensyndrome.ontology import enrich_definition, MAPPERS
 from opensyndrome.artifacts import get_schema_filepath, get_definition_dir
 from opensyndrome.validators import validate_machine_readable_format
 from opensyndrome.providers import (
@@ -113,6 +113,13 @@ def check_provider(func):
     help="Post-process output to populate ontology IDs via EBI OLS4.",
 )
 @click.option(
+    "--mapper",
+    type=click.Choice(MAPPERS),
+    default="ols",
+    show_default=True,
+    help="Ontology mapper to use with --enrich-ontology.",
+)
+@click.option(
     "-hr",
     "--human-readable-definition",
     type=str,
@@ -138,6 +145,7 @@ def convert_to_json(
     language,
     edit,
     enrich_ontology,
+    mapper,
     human_readable_definition,
     human_readable_definition_file,
     provider,
@@ -174,6 +182,7 @@ def convert_to_json(
 
         machine_readable_definition = enrich_definition(
             machine_readable_definition,
+            mapper=mapper,
             verbose_callback=_progress,
         )
 
@@ -196,7 +205,14 @@ def convert_to_json(
 @click.option(
     "--validate", is_flag=True, help="Validate the JSON file against the schema."
 )
-def enrich_json(json_file, edit, validate):
+@click.option(
+    "--mapper",
+    type=click.Choice(MAPPERS),
+    default="ols",
+    show_default=True,
+    help="Ontology mapper to use.",
+)
+def enrich_json(json_file, edit, validate, mapper):
     """Populate ontology IDs on an existing JSON definition via EBI OLS4."""
     definition = json.loads(Path(json_file).read_text())
     click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
@@ -204,7 +220,9 @@ def enrich_json(json_file, edit, validate):
     def _progress(name, curie):
         click.echo(click.style(f"  {name} → {curie}"), err=True)
 
-    definition = enrich_definition(definition, verbose_callback=_progress)
+    definition = enrich_definition(
+        definition, mapper=mapper, verbose_callback=_progress
+    )
 
     if edit:
         edited = click.edit(text=json.dumps(definition, indent=4), extension=".json")

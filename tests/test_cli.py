@@ -271,6 +271,22 @@ class TestEnrichJson:
         assert result.exit_code == 0
         assert "@context" in result.output
 
+    def test_enrich_passes_mapper_to_enrich_definition(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        runner.invoke(cli, ["enrich", str(json_file), "--mapper", "text2term"])
+        assert mock_enrich.call_args.kwargs["mapper"] == "text2term"
+
+    def test_enrich_default_mapper_is_ols(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        runner.invoke(cli, ["enrich", str(json_file)])
+        assert mock_enrich.call_args.kwargs["mapper"] == "ols"
+
 
 class TestConvertToText:
     @pytest.fixture(autouse=True)
