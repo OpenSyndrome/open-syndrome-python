@@ -229,6 +229,49 @@ class TestConvertToJson:
         assert result.exit_code == 1
 
 
+class TestEnrichJson:
+    @pytest.fixture
+    def runner(self):
+        return CliRunner()
+
+    @pytest.fixture
+    def json_file(self, tmp_path):
+        f = tmp_path / "definition.json"
+        f.write_text('{"inclusion_criteria": [{"type": "symptom", "name": "Fever"}]}')
+        return f
+
+    def test_enrich_calls_enrich_definition(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        result = runner.invoke(cli, ["enrich", str(json_file)])
+        assert result.exit_code == 0
+        mock_enrich.assert_called_once()
+
+    def test_enrich_passes_definition_from_file(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        runner.invoke(cli, ["enrich", str(json_file)])
+        passed = mock_enrich.call_args.args[0]
+        assert passed == {"inclusion_criteria": [{"type": "symptom", "name": "Fever"}]}
+
+    def test_enrich_nonexistent_file_exits_with_error(self, runner):
+        result = runner.invoke(cli, ["enrich", "nonexistent.json"])
+        assert result.exit_code == 2
+
+    def test_enrich_outputs_json(self, runner, json_file, mocker):
+        mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": [], "@context": "http://example.com"},
+        )
+        result = runner.invoke(cli, ["enrich", str(json_file)])
+        assert result.exit_code == 0
+        assert "@context" in result.output
+
+
 class TestConvertToText:
     @pytest.fixture(autouse=True)
     def isolate_env(self, mocker):

@@ -190,6 +190,33 @@ def convert_to_json(
         validate_machine_readable_format_with_style(machine_readable_definition)
 
 
+@cli.command("enrich")
+@click.argument("json_file", type=click.Path(exists=True))
+@click.option("--edit", is_flag=True, help="Open editor after enrichment.")
+@click.option(
+    "--validate", is_flag=True, help="Validate the JSON file against the schema."
+)
+def enrich_json(json_file, edit, validate):
+    """Populate ontology IDs on an existing JSON definition via EBI OLS4."""
+    definition = json.loads(Path(json_file).read_text())
+    click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
+
+    def _progress(name, curie):
+        click.echo(click.style(f"  {name} → {curie}"), err=True)
+
+    definition = enrich_definition(definition, verbose_callback=_progress)
+
+    if edit:
+        edited = click.edit(text=json.dumps(definition, indent=4), extension=".json")
+        if edited:
+            definition = json.loads(edited)
+
+    click.echo(color_json(definition))
+
+    if validate:
+        validate_machine_readable_format_with_style(definition)
+
+
 @cli.command("humanize")
 @click.argument("json_file", type=click.Path(exists=True))
 @click.option(
