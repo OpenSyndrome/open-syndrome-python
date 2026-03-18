@@ -77,12 +77,13 @@ def _search_text2term(
 
     for ontology in ontologies:
         try:
+            use_cache = text2term.cache.is_ontology_in_cache(ontology.upper())
             df = text2term.map_terms(
                 source_terms=[name],
                 target_ontology=ontology.upper(),
                 max_mappings=1,
                 min_score=min_score,
-                # use_cache=True,
+                use_cache=use_cache,
                 excl_deprecated=True,
             )
             if not df.empty:

@@ -102,7 +102,7 @@ The `enrich` command populates `ontology_id` fields on criteria nodes and sets t
 # enrich an existing JSON definition (uses OLS4 by default)
 opensyndrome enrich definition.json
 
-# use text2term instead (requires: pip install text2term)
+# use text2term instead (requires: pip install opensyndrome[text2term])
 opensyndrome enrich definition.json --mapper text2term
 
 # review and adjust the result in an editor before printing
