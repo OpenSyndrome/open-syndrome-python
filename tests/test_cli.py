@@ -72,10 +72,11 @@ class TestCheckProviderAvailable:
 
 class TestConvertToJson:
     @pytest.fixture(autouse=True)
-    def isolate_env(self, mocker):
+    def isolate_env(self, mocker, monkeypatch):
         mocker.patch.dict(
             "os.environ", {"OPENSYNDROME_PROVIDER": "ollama"}, clear=False
         )
+        monkeypatch.delenv("OPENSYNDROME_MODEL", raising=False)
 
     @pytest.fixture
     def runner(self):
@@ -290,10 +291,11 @@ class TestEnrichJson:
 
 class TestConvertToText:
     @pytest.fixture(autouse=True)
-    def isolate_env(self, mocker):
+    def isolate_env(self, mocker, monkeypatch):
         mocker.patch.dict(
             "os.environ", {"OPENSYNDROME_PROVIDER": "ollama"}, clear=False
         )
+        monkeypatch.delenv("OPENSYNDROME_MODEL", raising=False)
 
     @pytest.fixture
     def runner(self):
