@@ -82,12 +82,33 @@ class _FakeDF:
     def iloc(self):
         return self._rows
 
+    def iterrows(self):
+        for index, row in enumerate(self._rows):
+            yield index, row
+
 
 _EMPTY_DF = _FakeDF([])
 
 
-def _ols_df(iri: str, score: float = 0.9) -> _FakeDF:
-    return _FakeDF([{"Mapped Term IRI": iri, "Mapping Score": score}])
+def _ols_df(iri: str, source_term: str = "", score: float = 0.9) -> _FakeDF:
+    return _FakeDF(
+        [{"Source Term": source_term, "Mapped Term IRI": iri, "Mapping Score": score}]
+    )
+
+
+def _text2term_map_fn(per_ontology):
+    """Build a map_terms side_effect: returns rows for (src, iri) pairs registered per ontology."""
+
+    def _map_terms(*, source_terms, target_ontology, **kwargs):
+        pairs = per_ontology.get(target_ontology, [])
+        rows = [
+            {"Source Term": src, "Mapped Term IRI": iri, "Mapping Score": 0.9}
+            for src, iri in pairs
+            if src in source_terms
+        ]
+        return _FakeDF(rows)
+
+    return _map_terms
 
 
 class TestSearchText2term:
@@ -104,49 +125,91 @@ class TestSearchText2term:
 
     def test_returns_curie_on_match(self):
         sys.modules["text2term"] = _make_text2term_module(
-            map_terms_return=_ols_df("http://purl.obolibrary.org/obo/HP_0001945")
+            map_terms_side_effect=_text2term_map_fn(
+                {"HP": [("Fever", "http://purl.obolibrary.org/obo/HP_0001945")]}
+            )
         )
-        assert _search_text2term("Fever", ["hp"]) == "HP:0001945"
+        assert _search_text2term({"Fever": ["hp"]}) == {"Fever": "HP:0001945"}
 
-    def test_tries_next_ontology_on_empty(self):
+    def test_falls_back_to_next_ontology_on_empty(self):
         sys.modules["text2term"] = _make_text2term_module(
-            map_terms_side_effect=[
-                _EMPTY_DF,
-                _ols_df("http://purl.obolibrary.org/obo/MONDO_0005148"),
-            ]
+            map_terms_side_effect=_text2term_map_fn(
+                {"MONDO": [("Dengue", "http://purl.obolibrary.org/obo/MONDO_0005148")]}
+            )
         )
-        assert _search_text2term("Dengue", ["hp", "mondo"]) == "MONDO:0005148"
+        assert _search_text2term({"Dengue": ["hp", "mondo"]}) == {
+            "Dengue": "MONDO:0005148"
+        }
 
-    def test_returns_none_when_all_empty(self):
-        sys.modules["text2term"] = _make_text2term_module(map_terms_return=_EMPTY_DF)
-        assert _search_text2term("Unknown", ["hp"]) is None
+    def test_returns_empty_when_no_match(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_side_effect=_text2term_map_fn({})
+        )
+        assert _search_text2term({"Unknown": ["hp"]}) == {}
 
-    def test_returns_none_on_request_exception(self):
+    def test_skips_ontology_on_request_exception(self):
         sys.modules["text2term"] = _make_text2term_module(
             map_terms_side_effect=requests.RequestException("network error")
         )
-        assert _search_text2term("Fever", ["hp"]) is None
+        assert _search_text2term({"Fever": ["hp"]}) == {}
 
     def test_unexpected_exception_propagates(self):
         sys.modules["text2term"] = _make_text2term_module(
             map_terms_side_effect=AttributeError("bug in text2term")
         )
         with pytest.raises(AttributeError, match="bug in text2term"):
-            _search_text2term("Fever", ["hp"])
+            _search_text2term({"Fever": ["hp"]})
 
     def test_unparseable_iri_falls_through_to_next_ontology(self):
         sys.modules["text2term"] = _make_text2term_module(
-            map_terms_side_effect=[
-                _ols_df("garbage://nonsense"),
-                _ols_df("http://purl.obolibrary.org/obo/MONDO_0005148"),
-            ]
+            map_terms_side_effect=_text2term_map_fn(
+                {
+                    "HP": [("Dengue", "garbage://nonsense")],
+                    "MONDO": [
+                        ("Dengue", "http://purl.obolibrary.org/obo/MONDO_0005148")
+                    ],
+                }
+            )
         )
-        assert _search_text2term("Dengue", ["hp", "mondo"]) == "MONDO:0005148"
+        assert _search_text2term({"Dengue": ["hp", "mondo"]}) == {
+            "Dengue": "MONDO:0005148"
+        }
+
+    def test_priority_order_within_query_is_respected(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_side_effect=_text2term_map_fn(
+                {
+                    "HP": [("Fever", "http://purl.obolibrary.org/obo/HP_0001945")],
+                    "MONDO": [
+                        ("Fever", "http://purl.obolibrary.org/obo/MONDO_9999999")
+                    ],
+                }
+            )
+        )
+        assert _search_text2term({"Fever": ["mondo", "hp"]}) == {
+            "Fever": "MONDO:9999999"
+        }
+
+    def test_batch_loads_each_ontology_once(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_side_effect=_text2term_map_fn(
+                {
+                    "MONDO": [
+                        ("Dengue", "http://purl.obolibrary.org/obo/MONDO_0005148"),
+                        ("Malaria", "http://purl.obolibrary.org/obo/MONDO_0005136"),
+                    ],
+                }
+            )
+        )
+        queries = {"Dengue": ["mondo"], "Malaria": ["mondo"]}
+        result = _search_text2term(queries)
+        assert result == {"Dengue": "MONDO:0005148", "Malaria": "MONDO:0005136"}
+        assert sys.modules["text2term"].map_terms.call_count == 1
 
     def test_raises_on_missing_library(self):
         sys.modules["text2term"] = None
         with pytest.raises(ImportError, match="text2term is not installed"):
-            _search_text2term("Fever", ["hp"])
+            _search_text2term({"Fever": ["hp"]})
 
 
 class TestCollectEnrichable:
@@ -259,14 +322,14 @@ class TestSearchOls:
     def test_returns_curie_on_exact_match(self):
         with patch("opensyndrome.ontology.ols.get_json") as mock_get:
             mock_get.return_value = _ols_payload([_ols_doc("Fever", "HP:0001945")])
-            result = _search_ols("Fever", ["hp"])
-        assert result == "HP:0001945"
+            result = _search_ols({"Fever": ["hp"]})
+        assert result == {"Fever": "HP:0001945"}
 
-    def test_returns_none_on_empty_docs(self):
+    def test_returns_empty_when_no_match(self):
         with patch("opensyndrome.ontology.ols.get_json") as mock_get:
             mock_get.return_value = _ols_payload([])
-            result = _search_ols("Unknown term", ["hp"])
-        assert result is None
+            result = _search_ols({"Unknown term": ["hp"]})
+        assert result == {}
 
     def test_falls_back_to_synonym_search(self):
         synonym_hit = _ols_payload([_ols_doc("rash", "HP:0000988")])
@@ -274,23 +337,23 @@ class TestSearchOls:
             "opensyndrome.ontology.ols.get_json",
             side_effect=[_ols_payload([]), synonym_hit],
         ) as mock_get:
-            result = _search_ols("rash", ["hp"])
-        assert result == "HP:0000988"
+            result = _search_ols({"rash": ["hp"]})
+        assert result == {"rash": "HP:0000988"}
         assert mock_get.call_count == 2
         assert mock_get.call_args_list[1].kwargs["params"]["queryFields"] == (
             "label,synonym"
         )
 
-    def test_returns_none_on_request_exception(self):
+    def test_skips_name_on_request_exception(self):
         with patch("opensyndrome.ontology.ols.get_json") as mock_get:
             mock_get.side_effect = requests.RequestException("timeout")
-            result = _search_ols("Fever", ["hp"])
-        assert result is None
+            result = _search_ols({"Fever": ["hp"]})
+        assert result == {}
 
     def test_passes_ontology_filter_to_client(self):
         with patch("opensyndrome.ontology.ols.get_json") as mock_get:
             mock_get.return_value = _ols_payload([])
-            _search_ols("Fever", ["hp", "mondo"])
+            _search_ols({"Fever": ["hp", "mondo"]})
         params = mock_get.call_args.kwargs["params"]
         assert params["ontology"] == "hp,mondo"
         assert params["type"] == "class"
@@ -298,25 +361,38 @@ class TestSearchOls:
     def test_passes_explicit_timeout_to_client(self):
         with patch("opensyndrome.ontology.ols.get_json") as mock_get:
             mock_get.return_value = _ols_payload([])
-            _search_ols("Fever", ["hp"], timeout=15)
+            _search_ols({"Fever": ["hp"]}, timeout=15)
         assert mock_get.call_args.kwargs["timeout"] == 15
+
+    def test_resilient_when_one_name_fails(self):
+        with patch("opensyndrome.ontology.ols.get_json") as mock_get:
+            mock_get.side_effect = [
+                requests.RequestException("timeout"),
+                _ols_payload([_ols_doc("Rash", "HP:0000988")]),
+            ]
+            result = _search_ols({"Fever": ["hp"], "Rash": ["hp"]})
+        assert result == {"Rash": "HP:0000988"}
 
 
 class TestEnrichDefinition:
     def test_sets_context(self, mocker):
-        mocker.patch("opensyndrome.ontology._search_ols", return_value=None)
+        mocker.patch("opensyndrome.ontology._search_ols", return_value={})
         definition = {"inclusion_criteria": [{"type": "symptom", "name": "Fever"}]}
         result = enrich_definition(definition)
         assert result["@context"] == OPENSYNDROME_CONTEXT_URL
 
     def test_applies_mapping_to_inclusion_criteria(self, mocker):
-        mocker.patch("opensyndrome.ontology._search_ols", return_value="HP:0001945")
+        mocker.patch(
+            "opensyndrome.ontology._search_ols", return_value={"Fever": "HP:0001945"}
+        )
         criterion = {"type": "symptom", "name": "Fever"}
         enrich_definition({"inclusion_criteria": [criterion]})
         assert criterion["ontology_id"] == "HP:0001945"
 
     def test_applies_mapping_to_exclusion_criteria(self, mocker):
-        mocker.patch("opensyndrome.ontology._search_ols", return_value="HP:0000988")
+        mocker.patch(
+            "opensyndrome.ontology._search_ols", return_value={"Rash": "HP:0000988"}
+        )
         criterion = {"type": "symptom", "name": "Rash"}
         enrich_definition({"inclusion_criteria": [], "exclusion_criteria": [criterion]})
         assert criterion["ontology_id"] == "HP:0000988"
@@ -333,7 +409,9 @@ class TestEnrichDefinition:
         assert definition["@context"] == OPENSYNDROME_CONTEXT_URL
 
     def test_handles_none_exclusion_criteria(self, mocker):
-        mocker.patch("opensyndrome.ontology._search_ols", return_value="HP:0001945")
+        mocker.patch(
+            "opensyndrome.ontology._search_ols", return_value={"Fever": "HP:0001945"}
+        )
         definition = {
             "inclusion_criteria": [{"type": "symptom", "name": "Fever"}],
             "exclusion_criteria": None,
@@ -342,7 +420,9 @@ class TestEnrichDefinition:
         assert result["@context"] == OPENSYNDROME_CONTEXT_URL
 
     def test_calls_verbose_callback(self, mocker):
-        mocker.patch("opensyndrome.ontology._search_ols", return_value="HP:0001945")
+        mocker.patch(
+            "opensyndrome.ontology._search_ols", return_value={"Fever": "HP:0001945"}
+        )
         calls = []
         definition = {"inclusion_criteria": [{"type": "symptom", "name": "Fever"}]}
         enrich_definition(
@@ -352,18 +432,17 @@ class TestEnrichDefinition:
         assert calls == [("Fever", "HP:0001945")]
 
     def test_uses_correct_ontologies_per_type(self, mocker):
-        mock_search = mocker.patch(
-            "opensyndrome.ontology._search_ols", return_value=None
-        )
+        mock_search = mocker.patch("opensyndrome.ontology._search_ols", return_value={})
         enrich_definition(
             {"inclusion_criteria": [{"type": "diagnosis", "name": "Dengue"}]}
         )
-        _, ontologies = mock_search.call_args.args
-        assert ontologies == ["mondo", "efo"]
+        queries = mock_search.call_args.args[0]
+        assert queries == {"Dengue": ["mondo", "efo"]}
 
     def test_uses_text2term_mapper(self, mocker):
         mock_search = mocker.patch(
-            "opensyndrome.ontology._search_text2term", return_value="HP:0001945"
+            "opensyndrome.ontology._search_text2term",
+            return_value={"Fever": "HP:0001945"},
         )
         criterion = {"type": "symptom", "name": "Fever"}
         enrich_definition({"inclusion_criteria": [criterion]}, mapper="text2term")
@@ -373,3 +452,22 @@ class TestEnrichDefinition:
     def test_invalid_mapper_raises(self):
         with pytest.raises(ValueError, match="Unknown mapper"):
             enrich_definition({"inclusion_criteria": []}, mapper="unknown")
+
+    def test_duplicate_names_last_criterion_type_wins(self, mocker):
+        """Contract: when the same name appears under different criterion types,
+        the LAST occurrence's ontology preference is queried, and the resulting
+        CURIE is applied to every occurrence."""
+        mock_search = mocker.patch(
+            "opensyndrome.ontology._search_ols",
+            return_value={"Fever": "EFO:0009088"},
+        )
+        inclusion = [
+            {"type": "symptom", "name": "Fever"},
+            {"type": "diagnosis", "name": "Fever"},
+        ]
+        enrich_definition({"inclusion_criteria": inclusion})
+
+        queries = mock_search.call_args.args[0]
+        assert queries == {"Fever": ["mondo", "efo"]}
+        assert inclusion[0]["ontology_id"] == "EFO:0009088"
+        assert inclusion[1]["ontology_id"] == "EFO:0009088"

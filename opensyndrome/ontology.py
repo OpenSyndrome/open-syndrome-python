@@ -32,30 +32,33 @@ def _pick_best(docs: list[dict], name: str) -> str | None:
     return None
 
 
-def _search_ols(name: str, ontologies: list[str], timeout: int = 10) -> str | None:
-    base_params = {
-        "q": name,
-        "ontology": ",".join(ontologies),
-        "rows": 5,
-        "type": "class",
-    }
-    try:
-        payload = ols.get_json("/search", params=base_params, timeout=timeout)
-        docs = payload.get("response", {}).get("docs", [])
-        result = _pick_best(docs, name)
-        if result:
-            return result
-
-        payload = ols.get_json(
-            "/search",
-            params={**base_params, "queryFields": "label,synonym"},
-            timeout=timeout,
-        )
-        docs = payload.get("response", {}).get("docs", [])
-        return _pick_best(docs, name)
-    except requests.RequestException as exc:
-        logger.warning("OLS4 search failed for %r: %s", name, exc)
-        return None
+def _search_ols(queries: dict[str, list[str]], timeout: int = 10) -> dict[str, str]:
+    """Map names to CURIEs via OLS4 (one HTTP call per name; per-name failures are isolated)."""
+    result: dict[str, str] = {}
+    for name, ontologies in queries.items():
+        base_params = {
+            "q": name,
+            "ontology": ",".join(ontologies),
+            "rows": 5,
+            "type": "class",
+        }
+        try:
+            payload = ols.get_json("/search", params=base_params, timeout=timeout)
+            docs = payload.get("response", {}).get("docs", [])
+            curie = _pick_best(docs, name)
+            if not curie:
+                payload = ols.get_json(
+                    "/search",
+                    params={**base_params, "queryFields": "label,synonym"},
+                    timeout=timeout,
+                )
+                docs = payload.get("response", {}).get("docs", [])
+                curie = _pick_best(docs, name)
+            if curie:
+                result[name] = curie
+        except requests.RequestException as exc:
+            logger.warning("OLS4 search failed for %r: %s", name, exc)
+    return result
 
 
 def _iri_to_curie(iri: str) -> str | None:
@@ -78,8 +81,10 @@ def _iri_to_curie(iri: str) -> str | None:
 
 
 def _search_text2term(
-    name: str, ontologies: list[str], min_score: float = TEXT2TERM_MIN_SCORE
-) -> str | None:
+    queries: dict[str, list[str]],
+    min_score: float = TEXT2TERM_MIN_SCORE,
+) -> dict[str, str]:
+    """Batch-map names to CURIEs via text2term, loading each ontology at most once."""
     try:
         import text2term
     except ImportError:
@@ -87,26 +92,45 @@ def _search_text2term(
             "text2term is not installed. Run: pip install text2term"
         ) from None
 
-    for ontology in ontologies:
+    names_per_ontology: dict[str, set[str]] = {}
+    for name, ontologies in queries.items():
+        for ontology in ontologies:
+            names_per_ontology.setdefault(ontology.upper(), set()).add(name)
+
+    matches_per_ontology: dict[str, dict[str, str]] = {}
+    for ontology, names in names_per_ontology.items():
         try:
-            use_cache = text2term.cache_exists(ontology.upper())
+            use_cache = text2term.cache_exists(ontology)
             df = text2term.map_terms(
-                source_terms=[name],
-                target_ontology=ontology.upper(),
+                source_terms=sorted(names),
+                target_ontology=ontology,
                 max_mappings=1,
                 min_score=min_score,
                 use_cache=use_cache,
                 excl_deprecated=True,
             )
-            if not df.empty:
-                curie = _iri_to_curie(df.iloc[0]["Mapped Term IRI"])
+            ontology_matches: dict[str, str] = {}
+            for _, row in df.iterrows():
+                curie = _iri_to_curie(row["Mapped Term IRI"])
                 if curie:
-                    return curie
+                    ontology_matches[row["Source Term"]] = curie
+            matches_per_ontology[ontology] = ontology_matches
         except (requests.RequestException, OSError, RuntimeError, ValueError) as exc:
             logger.warning(
-                "text2term search failed for %r with %s: %s", name, ontology, exc
+                "text2term batch failed for %s (%d terms): %s",
+                ontology,
+                len(names),
+                exc,
             )
-    return None
+
+    result: dict[str, str] = {}
+    for name, ontologies in queries.items():
+        for ontology in ontologies:
+            curie = matches_per_ontology.get(ontology.upper(), {}).get(name)
+            if curie:
+                result[name] = curie
+                break
+    return result
 
 
 def _collect_enrichable(criteria: list[dict]) -> list[dict]:
@@ -160,14 +184,11 @@ def enrich_definition(
     if not enrichable:
         return definition
 
-    mapping: dict[str, str] = {}
-    for criterion in enrichable:
-        name = criterion["name"]
-        type_ = criterion["type"]
-        ontologies = CRITERION_TYPE_ONTOLOGIES.get(type_, ["hp", "efo", "mondo"])
-        curie = search_fn(name, ontologies)
-        if curie:
-            mapping[name] = curie
+    queries: dict[str, list[str]] = {
+        c["name"]: CRITERION_TYPE_ONTOLOGIES.get(c["type"], ["hp", "efo", "mondo"])
+        for c in enrichable
+    }
+    mapping = search_fn(queries)
 
     for criteria_list in [inclusion_criteria, exclusion_criteria]:
         _apply_mapping(criteria_list, mapping, verbose_callback)
