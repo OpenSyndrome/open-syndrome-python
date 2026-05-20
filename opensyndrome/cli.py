@@ -110,7 +110,7 @@ def check_provider(func):
 @click.option(
     "--enrich-ontology / --no-enrich-ontology",
     default=False,
-    help="Post-process output to populate ontology IDs via EBI OLS4.",
+    help="Post-process output to populate ontology IDs.",
 )
 @click.option(
     "--mapper",
@@ -213,7 +213,7 @@ def convert_to_json(
     help="Ontology mapper to use.",
 )
 def enrich_json(json_file, edit, validate, mapper):
-    """Populate ontology IDs on an existing JSON definition via EBI OLS4."""
+    """Populate ontology IDs on an existing JSON definition."""
     definition = json.loads(Path(json_file).read_text())
     click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
 
