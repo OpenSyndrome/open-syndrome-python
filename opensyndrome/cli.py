@@ -11,6 +11,7 @@ from opensyndrome.converters import (
     generate_machine_readable_format,
     generate_human_readable_format,
 )
+from opensyndrome.ontology import enrich_definition, MAPPERS
 from opensyndrome.artifacts import get_schema_filepath, get_definition_dir
 from opensyndrome.validators import validate_machine_readable_format
 from opensyndrome.providers import (
@@ -107,6 +108,18 @@ def check_provider(func):
     help="Open editor after generation.",
 )
 @click.option(
+    "--enrich-ontology / --no-enrich-ontology",
+    default=False,
+    help="Post-process output to populate ontology IDs.",
+)
+@click.option(
+    "--mapper",
+    type=click.Choice(MAPPERS),
+    default="ols",
+    show_default=True,
+    help="Ontology mapper to use with --enrich-ontology.",
+)
+@click.option(
     "-hr",
     "--human-readable-definition",
     type=str,
@@ -131,6 +144,8 @@ def convert_to_json(
     model,
     language,
     edit,
+    enrich_ontology,
+    mapper,
     human_readable_definition,
     human_readable_definition_file,
     provider,
@@ -156,6 +171,21 @@ def convert_to_json(
         _show_llm_error(exception, provider, model)
         return
 
+    if enrich_ontology:
+        click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
+
+        def _progress(name, curie):
+            click.echo(
+                click.style(f"  {name} → {curie}"),
+                err=True,
+            )
+
+        machine_readable_definition = enrich_definition(
+            machine_readable_definition,
+            mapper=mapper,
+            verbose_callback=_progress,
+        )
+
     if edit:
         machine_readable_definition_edited = click.edit(
             text=json.dumps(machine_readable_definition, indent=4), extension=".json"
@@ -167,6 +197,42 @@ def convert_to_json(
 
     if validate:
         validate_machine_readable_format_with_style(machine_readable_definition)
+
+
+@cli.command("enrich")
+@click.argument("json_file", type=click.Path(exists=True))
+@click.option("--edit", is_flag=True, help="Open editor after enrichment.")
+@click.option(
+    "--validate", is_flag=True, help="Validate the JSON file against the schema."
+)
+@click.option(
+    "--mapper",
+    type=click.Choice(MAPPERS),
+    default="ols",
+    show_default=True,
+    help="Ontology mapper to use.",
+)
+def enrich_json(json_file, edit, validate, mapper):
+    """Populate ontology IDs on an existing JSON definition."""
+    definition = json.loads(Path(json_file).read_text())
+    click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
+
+    def _progress(name, curie):
+        click.echo(click.style(f"  {name} → {curie}"), err=True)
+
+    definition = enrich_definition(
+        definition, mapper=mapper, verbose_callback=_progress
+    )
+
+    if edit:
+        edited = click.edit(text=json.dumps(definition, indent=4), extension=".json")
+        if edited:
+            definition = json.loads(edited)
+
+    click.echo(color_json(definition))
+
+    if validate:
+        validate_machine_readable_format_with_style(definition)
 
 
 @cli.command("humanize")

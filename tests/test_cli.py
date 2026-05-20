@@ -72,10 +72,11 @@ class TestCheckProviderAvailable:
 
 class TestConvertToJson:
     @pytest.fixture(autouse=True)
-    def isolate_env(self, mocker):
+    def isolate_env(self, mocker, monkeypatch):
         mocker.patch.dict(
             "os.environ", {"OPENSYNDROME_PROVIDER": "ollama"}, clear=False
         )
+        monkeypatch.delenv("OPENSYNDROME_MODEL", raising=False)
 
     @pytest.fixture
     def runner(self):
@@ -192,6 +193,27 @@ class TestConvertToJson:
         result = runner.invoke(cli, ["convert", "-hr", "Any person with pneumonia"])
         assert result.exit_code == 1
 
+    def test_convert_with_enrich_ontology_calls_enrich(
+        self, runner, mock_convert, mock_provider_available, mocker
+    ):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"name": "Pneumonia"},
+        )
+        result = runner.invoke(
+            cli, ["convert", "-hr", "Any person with pneumonia", "--enrich-ontology"]
+        )
+        assert result.exit_code == 0
+        mock_enrich.assert_called_once()
+
+    def test_convert_without_enrich_ontology_skips_enrich(
+        self, runner, mock_convert, mock_provider_available, mocker
+    ):
+        mock_enrich = mocker.patch("opensyndrome.cli.enrich_definition")
+        result = runner.invoke(cli, ["convert", "-hr", "Any person with pneumonia"])
+        assert result.exit_code == 0
+        mock_enrich.assert_not_called()
+
     def test_convert_shows_friendly_error_on_rate_limit(
         self, runner, mock_provider_available, mocker
     ):
@@ -208,12 +230,72 @@ class TestConvertToJson:
         assert result.exit_code == 1
 
 
+class TestEnrichJson:
+    @pytest.fixture
+    def runner(self):
+        return CliRunner()
+
+    @pytest.fixture
+    def json_file(self, tmp_path):
+        f = tmp_path / "definition.json"
+        f.write_text('{"inclusion_criteria": [{"type": "symptom", "name": "Fever"}]}')
+        return f
+
+    def test_enrich_calls_enrich_definition(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        result = runner.invoke(cli, ["enrich", str(json_file)])
+        assert result.exit_code == 0
+        mock_enrich.assert_called_once()
+
+    def test_enrich_passes_definition_from_file(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        runner.invoke(cli, ["enrich", str(json_file)])
+        passed = mock_enrich.call_args.args[0]
+        assert passed == {"inclusion_criteria": [{"type": "symptom", "name": "Fever"}]}
+
+    def test_enrich_nonexistent_file_exits_with_error(self, runner):
+        result = runner.invoke(cli, ["enrich", "nonexistent.json"])
+        assert result.exit_code == 2
+
+    def test_enrich_outputs_json(self, runner, json_file, mocker):
+        mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": [], "@context": "http://example.com"},
+        )
+        result = runner.invoke(cli, ["enrich", str(json_file)])
+        assert result.exit_code == 0
+        assert "@context" in result.output
+
+    def test_enrich_passes_mapper_to_enrich_definition(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        runner.invoke(cli, ["enrich", str(json_file), "--mapper", "text2term"])
+        assert mock_enrich.call_args.kwargs["mapper"] == "text2term"
+
+    def test_enrich_default_mapper_is_ols(self, runner, json_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            return_value={"inclusion_criteria": []},
+        )
+        runner.invoke(cli, ["enrich", str(json_file)])
+        assert mock_enrich.call_args.kwargs["mapper"] == "ols"
+
+
 class TestConvertToText:
     @pytest.fixture(autouse=True)
-    def isolate_env(self, mocker):
+    def isolate_env(self, mocker, monkeypatch):
         mocker.patch.dict(
             "os.environ", {"OPENSYNDROME_PROVIDER": "ollama"}, clear=False
         )
+        monkeypatch.delenv("OPENSYNDROME_MODEL", raising=False)
 
     @pytest.fixture
     def runner(self):
