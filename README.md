@@ -143,6 +143,12 @@ To get started with development, you need to have [uv](https://docs.astral.sh/uv
 uv sync
 ```
 
+To include the optional `text2term` mapper (and its `bioregistry` dependency) so the full test suite runs without skips:
+
+```bash
+uv sync --all-extras
+```
+
 ### Generate Ollama-compatible JSON
 
 > You only need to do this if you are a maintainer adding a new OSI schema or updating an existing one.

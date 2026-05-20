@@ -18,13 +18,14 @@ dependencies = [
     "datamodel-code-generator>=0.55.0",
     "litellm>=1.82.2",
     "instructor>=1.14.5",
+    "ols-client>=0.2.1",
 ]
 
 [project.scripts]
 opensyndrome = "opensyndrome.cli:main"
 
 [project.optional-dependencies]
-text2term = ["text2term>=4.5.0"]
+text2term = ["text2term>=4.5.0", "bioregistry>=0.11.35"]
 
 [dependency-groups]
 dev = [

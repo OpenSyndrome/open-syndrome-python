@@ -302,6 +302,19 @@ wheels = [
 ]
 
 [[package]]
+name = "class-resolver"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", version = "4.12.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
+    { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a0/31/4fc27f245886ee5a545819b96780c1b81e87a4c7f82e2236c1e183ec33dd/class_resolver-0.7.1.tar.gz", hash = "sha256:86f73b8cc5ed9111b7d9c5e331b51856a32f205179c66a56a9c520d0f6e82f66", size = 27045, upload-time = "2025-08-28T12:57:59.81Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/f7/6718949c6689c3fcf934fee08f572e4493d4d3e85a95fe76a80e74b0c4e3/class_resolver-0.7.1-py3-none-any.whl", hash = "sha256:d177909a48fdf6d6a0c297d117742a83ea799e0f601a922aa9ccb23ca1200e00", size = 31995, upload-time = "2025-08-28T12:57:58.401Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.1.8"
 source = { registry = "https://pypi.org/simple" }
@@ -1198,6 +1211,22 @@ wheels = [
 ]
 
 [[package]]
+name = "ols-client"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "class-resolver" },
+    { name = "click" },
+    { name = "more-click" },
+    { name = "pystow" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/be/6e/13b086c5712370029f592ddc99110a004697e696be70fbe3899125cba086/ols_client-0.2.1.tar.gz", hash = "sha256:c5078446f025e2fbe24a1a2bbb924d7372216ca05e7ff11dba87aa7721be008a", size = 12563, upload-time = "2025-08-04T09:31:26.216Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/73/81d0ea2ab7f54e45060f6ea7121300ee0e4d4c78cda6c24bd636677a9a94/ols_client-0.2.1-py3-none-any.whl", hash = "sha256:e6d094b8d49711ed2b173b06bd3fbc62be4c8becd21def3bf4efec59096fcca8", size = 13003, upload-time = "2025-08-04T09:31:25.092Z" },
+]
+
+[[package]]
 name = "openai"
 version = "2.28.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1229,6 +1258,7 @@ dependencies = [
     { name = "jsonschema" },
     { name = "litellm" },
     { name = "ollama" },
+    { name = "ols-client" },
     { name = "polars" },
     { name = "pyarrow" },
     { name = "pydantic", version = "2.10.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
@@ -1240,6 +1270,7 @@ dependencies = [
 
 [package.optional-dependencies]
 text2term = [
+    { name = "bioregistry" },
     { name = "text2term" },
 ]
 
@@ -1253,12 +1284,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bioregistry", marker = "extra == 'text2term'", specifier = ">=0.11.35" },
     { name = "click", specifier = ">=8.1.8,<9" },
     { name = "datamodel-code-generator", specifier = ">=0.55.0" },
     { name = "instructor", specifier = ">=1.14.5" },
     { name = "jsonschema", specifier = ">=4.23.0,<5" },
     { name = "litellm", specifier = ">=1.82.2" },
     { name = "ollama", specifier = ">=0.5.1,<0.6" },
+    { name = "ols-client", specifier = ">=0.2.1" },
     { name = "polars", specifier = ">=1.38.1" },
     { name = "pyarrow", specifier = ">=20.0.0,<21" },
     { name = "pydantic", specifier = ">=2.10.6,<3" },
