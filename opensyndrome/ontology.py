@@ -1,14 +1,16 @@
 import logging
+from typing import Literal, get_args
 
 import requests
+from ols_client import EBIClient
 
 logger = logging.getLogger(__name__)
 
-OLS4_SEARCH_URL = "https://www.ebi.ac.uk/ols4/api/search"
 OPENSYNDROME_CONTEXT_URL = "https://opensyndrome.org/schema/v1/context.jsonld"
 SKIP_TYPES = {"criterion", "demographic_criteria"}
-MIN_SCORE = 5.0
 TEXT2TERM_MIN_SCORE = 0.5
+
+ols = EBIClient()
 
 CRITERION_TYPE_ONTOLOGIES = {
     "symptom": ["mondo", "hp"],
@@ -19,52 +21,60 @@ CRITERION_TYPE_ONTOLOGIES = {
     "professional_judgment": ["hp", "efo"],
 }
 
-MAPPERS = ("ols", "text2term")
+type Mapper = Literal["ols", "text2term"]
+MAPPERS: tuple[Mapper, ...] = get_args(Mapper.__value__)
 
 
 def _pick_best(docs: list[dict], name: str) -> str | None:
     for doc in docs:
         if doc.get("label", "").lower() == name.lower():
-            return doc["short_form"].replace("_", ":", 1)
-    for doc in docs:
-        score = doc.get("score")
-        if score is not None and float(score) >= MIN_SCORE:
-            return doc["short_form"].replace("_", ":", 1)
+            return doc["obo_id"]
     return None
 
 
 def _search_ols(name: str, ontologies: list[str], timeout: int = 10) -> str | None:
-    base_params = {"ontology": ",".join(ontologies), "rows": 5, "type": "class"}
+    base_params = {
+        "q": name,
+        "ontology": ",".join(ontologies),
+        "rows": 5,
+        "type": "class",
+    }
     try:
-        response = requests.get(
-            OLS4_SEARCH_URL,
-            params={"q": name, **base_params},
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        docs = response.json().get("response", {}).get("docs", [])
+        payload = ols.get_json("/search", params=base_params, timeout=timeout)
+        docs = payload.get("response", {}).get("docs", [])
         result = _pick_best(docs, name)
         if result:
             return result
 
-        # Fallback: search synonyms
-        response = requests.get(
-            OLS4_SEARCH_URL,
-            params={"q": name, "queryFields": "label,synonym", **base_params},
+        payload = ols.get_json(
+            "/search",
+            params={**base_params, "queryFields": "label,synonym"},
             timeout=timeout,
         )
-        response.raise_for_status()
-        docs = response.json().get("response", {}).get("docs", [])
+        docs = payload.get("response", {}).get("docs", [])
         return _pick_best(docs, name)
     except requests.RequestException as exc:
         logger.warning("OLS4 search failed for %r: %s", name, exc)
         return None
 
 
-def _iri_to_curie(iri: str) -> str:
-    """Convert an OBO IRI to a CURIE. e.g. http://purl.obolibrary.org/obo/HP_0001945 → HP:0001945"""
-    local = iri.rstrip("/").rsplit("/", 1)[-1]
-    return local.replace("_", ":", 1)
+def _iri_to_curie(iri: str) -> str | None:
+    """Convert an ontology IRI to a CURIE. e.g. http://purl.obolibrary.org/obo/HP_0001945 → HP:0001945"""
+    import bioregistry
+
+    try:
+        prefix, identifier = bioregistry.parse_iri(iri, use_preferred=True)
+    except TypeError:
+        # bioregistry v0.11.35 raises on unparseable IRIs instead of returning (None, None).
+        return None
+    if not prefix:
+        return None
+    # bioregistry uses "obo" as a generic fallback for unrecognized OBO PURLs
+    # e.g. LOINC_2345-7, UNKNOWN_42
+    # reject to avoid producing OBO:* CURIEs
+    if prefix.lower() == "obo" and "_" in identifier:
+        return None
+    return f"{prefix.upper()}:{identifier}"
 
 
 def _search_text2term(
@@ -73,11 +83,13 @@ def _search_text2term(
     try:
         import text2term
     except ImportError:
-        raise ImportError("text2term is not installed. Run: pip install text2term")
+        raise ImportError(
+            "text2term is not installed. Run: pip install text2term"
+        ) from None
 
     for ontology in ontologies:
         try:
-            use_cache = text2term.cache.is_ontology_in_cache(ontology.upper())
+            use_cache = text2term.cache_exists(ontology.upper())
             df = text2term.map_terms(
                 source_terms=[name],
                 target_ontology=ontology.upper(),
@@ -87,8 +99,10 @@ def _search_text2term(
                 excl_deprecated=True,
             )
             if not df.empty:
-                return _iri_to_curie(df.iloc[0]["Mapped Term IRI"])
-        except Exception as exc:
+                curie = _iri_to_curie(df.iloc[0]["Mapped Term IRI"])
+                if curie:
+                    return curie
+        except (requests.RequestException, OSError, RuntimeError, ValueError) as exc:
             logger.warning(
                 "text2term search failed for %r with %s: %s", name, ontology, exc
             )
@@ -129,7 +143,7 @@ def _apply_mapping(
 def enrich_definition(
     definition: dict,
     *,
-    mapper: str = "ols",
+    mapper: Mapper = "ols",
     verbose_callback=None,
 ) -> dict:
     if mapper not in MAPPERS:

@@ -16,18 +16,19 @@ from opensyndrome.ontology import (
 )
 
 
-def _ols_response(label: str, short_form: str, score: float = 10.0) -> MagicMock:
-    mock = MagicMock()
-    mock.raise_for_status = MagicMock()
-    mock.json.return_value = {
-        "response": {
-            "docs": [{"label": label, "short_form": short_form, "score": score}]
-        }
-    }
-    return mock
+def _ols_doc(label: str, obo_id: str) -> dict:
+    return {"label": label, "obo_id": obo_id}
+
+
+def _ols_payload(docs: list[dict]) -> dict:
+    return {"response": {"docs": docs}}
 
 
 class TestIriToCurie:
+    @pytest.fixture(autouse=True)
+    def _require_bioregistry(self):
+        pytest.importorskip("bioregistry")
+
     def test_obo_iri(self):
         assert (
             _iri_to_curie("http://purl.obolibrary.org/obo/HP_0001945") == "HP:0001945"
@@ -42,10 +43,24 @@ class TestIriToCurie:
             == "MONDO:0005148"
         )
 
+    def test_unparseable_iri_returns_none(self):
+        assert _iri_to_curie("garbage://nonsense") is None
+
+    def test_loinc_native_namespace_uppercased(self):
+        assert _iri_to_curie("https://loinc.org/2345-7") == "LOINC:2345-7"
+
+    def test_unknown_prefix_returns_none(self):
+        assert _iri_to_curie("http://purl.obolibrary.org/obo/UNKNOWNXYZ_42") is None
+
 
 def _make_text2term_module(map_terms_return=None, map_terms_side_effect=None):
-    """Build a fake text2term module for injection into sys.modules."""
-    fake = MagicMock()
+    """Build a fake text2term module for injection into sys.modules.
+
+    Uses spec=real text2term so attribute access fails fast on API drift.
+    """
+    import text2term as real_text2term
+
+    fake = MagicMock(spec=real_text2term)
     if map_terms_side_effect is not None:
         fake.map_terms.side_effect = map_terms_side_effect
     else:
@@ -77,6 +92,10 @@ def _ols_df(iri: str, score: float = 0.9) -> _FakeDF:
 
 class TestSearchText2term:
     @pytest.fixture(autouse=True)
+    def _require_bioregistry(self):
+        pytest.importorskip("bioregistry")
+
+    @pytest.fixture(autouse=True)
     def inject_text2term(self, request):
         """Ensure text2term is removed from sys.modules between tests."""
         sys.modules.pop("text2term", None)
@@ -102,11 +121,27 @@ class TestSearchText2term:
         sys.modules["text2term"] = _make_text2term_module(map_terms_return=_EMPTY_DF)
         assert _search_text2term("Unknown", ["hp"]) is None
 
-    def test_returns_none_on_exception(self):
+    def test_returns_none_on_request_exception(self):
         sys.modules["text2term"] = _make_text2term_module(
-            map_terms_side_effect=Exception("network error")
+            map_terms_side_effect=requests.RequestException("network error")
         )
         assert _search_text2term("Fever", ["hp"]) is None
+
+    def test_unexpected_exception_propagates(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_side_effect=AttributeError("bug in text2term")
+        )
+        with pytest.raises(AttributeError, match="bug in text2term"):
+            _search_text2term("Fever", ["hp"])
+
+    def test_unparseable_iri_falls_through_to_next_ontology(self):
+        sys.modules["text2term"] = _make_text2term_module(
+            map_terms_side_effect=[
+                _ols_df("garbage://nonsense"),
+                _ols_df("http://purl.obolibrary.org/obo/MONDO_0005148"),
+            ]
+        )
+        assert _search_text2term("Dengue", ["hp", "mondo"]) == "MONDO:0005148"
 
     def test_raises_on_missing_library(self):
         sys.modules["text2term"] = None
@@ -205,23 +240,15 @@ class TestApplyMapping:
 
 class TestPickBest:
     def test_exact_match_wins(self):
-        docs = [{"label": "Fever", "short_form": "HP_0001945", "score": 1.0}]
+        docs = [_ols_doc("Fever", "HP:0001945")]
         assert _pick_best(docs, "Fever") == "HP:0001945"
 
     def test_exact_match_case_insensitive(self):
-        docs = [{"label": "Skin rash", "short_form": "HP_0000988", "score": 1.0}]
+        docs = [_ols_doc("Skin rash", "HP:0000988")]
         assert _pick_best(docs, "SKIN RASH") == "HP:0000988"
 
-    def test_score_threshold(self):
-        docs = [{"label": "Febrile", "short_form": "HP_0001945", "score": 6.0}]
-        assert _pick_best(docs, "other") == "HP:0001945"
-
-    def test_below_threshold_returns_none(self):
-        docs = [{"label": "Something", "short_form": "HP_0001945", "score": 1.0}]
-        assert _pick_best(docs, "other") is None
-
-    def test_none_score_returns_none(self):
-        docs = [{"label": "Skin rash", "short_form": "HP_0000988", "score": None}]
+    def test_no_match_returns_none(self):
+        docs = [_ols_doc("Febrile", "HP:0001945")]
         assert _pick_best(docs, "other") is None
 
     def test_empty_docs_returns_none(self):
@@ -230,54 +257,49 @@ class TestPickBest:
 
 class TestSearchOls:
     def test_returns_curie_on_exact_match(self):
-        with patch("opensyndrome.ontology.requests.get") as mock_get:
-            mock_get.return_value = _ols_response("Fever", "HP_0001945")
+        with patch("opensyndrome.ontology.ols.get_json") as mock_get:
+            mock_get.return_value = _ols_payload([_ols_doc("Fever", "HP:0001945")])
             result = _search_ols("Fever", ["hp"])
         assert result == "HP:0001945"
 
-    def test_returns_curie_on_score_threshold(self):
-        with patch("opensyndrome.ontology.requests.get") as mock_get:
-            mock_get.return_value = _ols_response("Febrile", "HP_0001945", score=6.0)
-            result = _search_ols("Febrile", ["hp"])
-        assert result == "HP:0001945"
-
-    def test_returns_none_below_threshold(self):
-        with patch("opensyndrome.ontology.requests.get") as mock_get:
-            mock_get.return_value = _ols_response("Unrelated", "HP_0001945", score=1.0)
-            result = _search_ols("Something else", ["hp"])
-        assert result is None
-
     def test_returns_none_on_empty_docs(self):
-        with patch("opensyndrome.ontology.requests.get") as mock_get:
-            mock = MagicMock()
-            mock.raise_for_status = MagicMock()
-            mock.json.return_value = {"response": {"docs": []}}
-            mock_get.return_value = mock
+        with patch("opensyndrome.ontology.ols.get_json") as mock_get:
+            mock_get.return_value = _ols_payload([])
             result = _search_ols("Unknown term", ["hp"])
         assert result is None
 
     def test_falls_back_to_synonym_search(self):
-        no_match = MagicMock()
-        no_match.raise_for_status = MagicMock()
-        no_match.json.return_value = {"response": {"docs": []}}
-        synonym_hit = _ols_response("Skin rash", "HP_0000988", score=8.0)
+        synonym_hit = _ols_payload([_ols_doc("rash", "HP:0000988")])
         with patch(
-            "opensyndrome.ontology.requests.get", side_effect=[no_match, synonym_hit]
-        ):
+            "opensyndrome.ontology.ols.get_json",
+            side_effect=[_ols_payload([]), synonym_hit],
+        ) as mock_get:
             result = _search_ols("rash", ["hp"])
         assert result == "HP:0000988"
+        assert mock_get.call_count == 2
+        assert mock_get.call_args_list[1].kwargs["params"]["queryFields"] == (
+            "label,synonym"
+        )
 
     def test_returns_none_on_request_exception(self):
-        with patch("opensyndrome.ontology.requests.get") as mock_get:
+        with patch("opensyndrome.ontology.ols.get_json") as mock_get:
             mock_get.side_effect = requests.RequestException("timeout")
             result = _search_ols("Fever", ["hp"])
         assert result is None
 
-    def test_normalizes_short_form(self):
-        with patch("opensyndrome.ontology.requests.get") as mock_get:
-            mock_get.return_value = _ols_response("Dengue fever", "MONDO_0005148")
-            result = _search_ols("Dengue fever", ["mondo"])
-        assert result == "MONDO:0005148"
+    def test_passes_ontology_filter_to_client(self):
+        with patch("opensyndrome.ontology.ols.get_json") as mock_get:
+            mock_get.return_value = _ols_payload([])
+            _search_ols("Fever", ["hp", "mondo"])
+        params = mock_get.call_args.kwargs["params"]
+        assert params["ontology"] == "hp,mondo"
+        assert params["type"] == "class"
+
+    def test_passes_explicit_timeout_to_client(self):
+        with patch("opensyndrome.ontology.ols.get_json") as mock_get:
+            mock_get.return_value = _ols_payload([])
+            _search_ols("Fever", ["hp"], timeout=15)
+        assert mock_get.call_args.kwargs["timeout"] == 15
 
 
 class TestEnrichDefinition:
