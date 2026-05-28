@@ -4,34 +4,10 @@ from unittest.mock import Mock, MagicMock
 import pytest
 
 from opensyndrome.converters import (
-    _add_first_level_required_fields,
     load_examples,
-    _fill_automatic_fields,
     generate_machine_readable_format,
 )
 from opensyndrome.schema import OpenSyndromeCaseDefinitionSchema
-
-
-class TestAddFirstLevelRequiredFields:
-    def test_add_first_level_required_fields(self, mocker):
-        schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "address": {"type": "string"},
-            },
-            "required": ["name"],
-        }
-        mocker.patch("opensyndrome.converters.json.loads", return_value=schema)
-        instance = {"address": "Karl-Marx-Str. 1, 10178 Berlin, Germany"}
-        expected = {
-            "address": "Karl-Marx-Str. 1, 10178 Berlin, Germany",
-            "name": "",
-        }
-
-        updated_instance = _add_first_level_required_fields(schema, instance)
-
-        assert updated_instance == expected
 
 
 class TestLoadExamples:
@@ -53,62 +29,6 @@ class TestLoadExamples:
         assert examples.count("- {") == k
 
 
-class TestFillAutomaticFields:
-    def test_check_required_fields(self, mocker):
-        schema = {
-            "type": "object",
-            "properties": {
-                "a-nice-name": {"type": "string"},
-                "address": {"type": "string"},
-            },
-            "required": ["a-nice-name"],
-        }
-        mocker.patch("opensyndrome.converters.json.loads", return_value=schema)
-        human_readable_definition = "Fiber and rash"
-        machine_readable_definition = {
-            "title": "Sarampo",
-        }
-        expected_keys = [
-            "a-nice-name",
-            "human_readable_definition",
-            "open_syndrome_version",
-            "published_at",
-            "published_by",
-            "published_in",
-            "references",
-            "status",
-            "title",
-        ]
-
-        definition_with_automatic_fields = _fill_automatic_fields(
-            machine_readable_definition, human_readable_definition
-        )
-
-        assert sorted(list(definition_with_automatic_fields.keys())) == sorted(
-            expected_keys
-        )
-
-    def test_include_human_readable_definition(self):
-        human_readable_definition = """
-        Todo paciente que, independente da idade e da situação vacinal, apresentar febre e exantema
-        maculopapular, acompanhados de um ou mais dos seguintes sinais e sintomas: tosse e/ou corizae/ou conjuntivite;
-        ou todo indivíduo suspeito com história de viagem ao exterior nos últimos 30 dias ou de contato,
-        no mesmo período, com alguém que viajou ao exterior.
-        """
-        machine_readable_definition = {
-            "title": "Sarampo",
-        }
-
-        definition_with_automatic_fields = _fill_automatic_fields(
-            machine_readable_definition, human_readable_definition
-        )
-
-        assert (
-            definition_with_automatic_fields["human_readable_definition"]
-            == human_readable_definition
-        )
-
-
 class TestGenerateMachineReadableFormat:
     @pytest.fixture
     def mock_instructor_client(self, mocker):
@@ -120,7 +40,7 @@ class TestGenerateMachineReadableFormat:
             "opensyndrome.converters.get_instructor_client", return_value=mock_client
         )
         mocker.patch(
-            "opensyndrome.converters._fill_automatic_fields",
+            "opensyndrome.converters.fill_automatic_fields",
             side_effect=lambda d, _: d,
         )
         return mock_client

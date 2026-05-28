@@ -1,14 +1,13 @@
 import json
 import logging
 import litellm
-from datetime import datetime
 from importlib.resources import files
 from pathlib import Path
 import random
 
 from dotenv import load_dotenv
 
-from opensyndrome.artifacts import get_schema_filepath
+from opensyndrome.metadata import fill_automatic_fields
 from opensyndrome.schema import OpenSyndromeCaseDefinitionSchema
 from opensyndrome.providers import (
     DEFAULT_MODEL,
@@ -17,6 +16,7 @@ from opensyndrome.providers import (
     get_instructor_client,
     get_litellm_kwargs,
 )
+
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -79,45 +79,6 @@ Expected output format:
 """
 
 
-def _add_first_level_required_fields(schema: dict, definition: dict):
-    """Add mandatory fields and empty values as placeholders."""
-    default_values = {
-        "string": "",
-        "array": [],
-        "object": {},
-        "integer": 0,
-    }
-    missing_fields = set(schema["required"]) - set(definition.keys())
-    for field in missing_fields:
-        definition[field] = default_values.get(schema["properties"][field]["type"])
-    return definition
-
-
-def _fill_automatic_fields(
-    machine_readable_definition: dict, human_readable_definition: str
-):
-    machine_readable_definition["human_readable_definition"] = human_readable_definition
-    machine_readable_definition["published_in"] = (
-        "https://opensyndrome.org/definitions/<replace-url>"
-    )
-    machine_readable_definition["published_at"] = str(
-        datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    )
-    machine_readable_definition["published_by"] = []
-    machine_readable_definition["status"] = "draft"
-    machine_readable_definition["open_syndrome_version"] = (
-        "1.0.0"  # TODO get this version from definition repo
-    )
-    machine_readable_definition["references"] = [
-        {"citation": "", "url": ""}
-    ]  # to be filled by the user
-    schema = json.loads(get_schema_filepath().read_text())
-    machine_readable_definition = _add_first_level_required_fields(
-        schema, machine_readable_definition
-    )
-    return machine_readable_definition
-
-
 def generate_machine_readable_format(
     human_readable_definition,
     model=DEFAULT_MODEL,
@@ -145,7 +106,7 @@ def generate_machine_readable_format(
         **get_litellm_kwargs(provider),
     )
 
-    return _fill_automatic_fields(
+    return fill_automatic_fields(
         instance.model_dump(exclude_none=True, by_alias=True, mode="json"),
         human_readable_definition,
     )
