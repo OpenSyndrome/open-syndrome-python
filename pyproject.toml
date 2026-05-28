@@ -20,6 +20,7 @@ dependencies = [
     "instructor>=1.14.5",
     "ols-client>=0.2.1",
     "sqlglot>=30.8.0",
+    "pyyaml>=6.0.2",
 ]
 
 [project.scripts]

@@ -5,12 +5,14 @@ from pathlib import Path
 from pygments import highlight, lexers, formatters
 import jsonschema
 import click
+import yaml
 from instructor.core.exceptions import InstructorRetryException
 
 from opensyndrome.converters import (
     generate_machine_readable_format,
     generate_human_readable_format,
 )
+from opensyndrome.mappers.sql import MappingError, sql_to_osd
 from opensyndrome.ontology import enrich_definition, MAPPERS
 from opensyndrome.artifacts import get_schema_filepath, get_definition_dir
 from opensyndrome.validators import validate_machine_readable_format
@@ -223,6 +225,122 @@ def enrich_json(json_file, edit, validate, mapper):
     definition = enrich_definition(
         definition, mapper=mapper, verbose_callback=_progress
     )
+
+    if edit:
+        edited = click.edit(text=json.dumps(definition, indent=4), extension=".json")
+        if edited:
+            definition = json.loads(edited)
+
+    click.echo(color_json(definition))
+
+    if validate:
+        validate_machine_readable_format_with_style(definition)
+
+
+def _load_mapping_file(path: Path) -> dict:
+    text = path.read_text()
+    if path.suffix.lower() == ".json":
+        return json.loads(text)
+    return yaml.safe_load(text)
+
+
+@cli.command("convert-sql")
+@click.option(
+    "-s",
+    "--sql",
+    type=str,
+    help="Inline SQL fragment to convert.",
+)
+@click.option(
+    "-sf",
+    "--sql-file",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Path to a file containing the SQL fragment.",
+)
+@click.option(
+    "--mapping",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Path to the column mapping file (YAML or JSON).",
+)
+@click.option(
+    "--profile",
+    type=str,
+    default=None,
+    help="Mapping profile name to use (defaults to the first profile).",
+)
+@click.option(
+    "--dialect",
+    type=str,
+    default="postgres",
+    show_default=True,
+    help="SQL dialect to parse with (any dialect supported by sqlglot).",
+)
+@click.option(
+    "--metadata-file",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+    help="Path to a YAML/JSON file with top-level definition metadata (title, scope, version, location, language, organization).",
+)
+@click.option("--edit", is_flag=True, help="Open editor on the generated JSON.")
+@click.option(
+    "--validate", is_flag=True, help="Validate the output against the OSD schema."
+)
+@click.option(
+    "--enrich-ontology / --no-enrich-ontology",
+    default=False,
+    help="Post-process output to populate ontology IDs.",
+)
+@click.option(
+    "--mapper",
+    type=click.Choice(MAPPERS),
+    default="ols",
+    show_default=True,
+    help="Ontology mapper to use with --enrich-ontology.",
+)
+def convert_sql(
+    sql,
+    sql_file,
+    mapping,
+    profile,
+    dialect,
+    metadata_file,
+    edit,
+    validate,
+    enrich_ontology,
+    mapper,
+):
+    """Convert a SQL fragment (or full SELECT ... WHERE) to OSD JSON."""
+    if sql and sql_file:
+        raise click.UsageError("Cannot use --sql and --sql-file at the same time.")
+    if not sql and not sql_file:
+        raise click.UsageError("Provide either --sql or --sql-file.")
+
+    sql_text = sql if sql else sql_file.read_text()
+    mapping_data = _load_mapping_file(mapping)
+    metadata = _load_mapping_file(metadata_file) if metadata_file else None
+
+    try:
+        definition = sql_to_osd(
+            sql_text,
+            mapping_data,
+            profile=profile,
+            metadata=metadata,
+            dialect=dialect,
+        )
+    except MappingError as exc:
+        click.echo(click.style(f"❌ {exc}", fg="red"), err=True)
+        raise click.exceptions.Exit(code=1)
+
+    if enrich_ontology:
+        click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
+
+        def _progress(name, curie):
+            click.echo(click.style(f"  {name} → {curie}"), err=True)
+
+        definition = enrich_definition(
+            definition, mapper=mapper, verbose_callback=_progress
+        )
 
     if edit:
         edited = click.edit(text=json.dumps(definition, indent=4), extension=".json")

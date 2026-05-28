@@ -289,6 +289,211 @@ class TestEnrichJson:
         assert mock_enrich.call_args.kwargs["mapper"] == "ols"
 
 
+class TestConvertSql:
+    @pytest.fixture
+    def runner(self):
+        return CliRunner()
+
+    @pytest.fixture
+    def mapping_file(self, tmp_path):
+        path = tmp_path / "mapping.yaml"
+        path.write_text(
+            "profiles:\n"
+            "  - name: test\n"
+            "    columns:\n"
+            "      icd_code:\n"
+            "        concept: diagnosis\n"
+            "        system: ICD-10\n"
+        )
+        return path
+
+    def test_inline_sql_prints_json(self, runner, mapping_file):
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'F10.0'",
+                "--mapping",
+                str(mapping_file),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"code": "F10.0"' in result.output
+        assert '"system": "ICD-10"' in result.output
+
+    def test_sql_file_is_read(self, runner, mapping_file, tmp_path):
+        sql_path = tmp_path / "query.sql"
+        sql_path.write_text("icd_code = 'A90'")
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-sf",
+                str(sql_path),
+                "--mapping",
+                str(mapping_file),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"code": "A90"' in result.output
+
+    def test_mutual_exclusion_of_sql_and_sql_file(self, runner, mapping_file, tmp_path):
+        sql_path = tmp_path / "query.sql"
+        sql_path.write_text("icd_code = 'A90'")
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "-sf",
+                str(sql_path),
+                "--mapping",
+                str(mapping_file),
+            ],
+        )
+        assert result.exit_code == 2
+        assert "Cannot use --sql and --sql-file at the same time" in result.output
+
+    def test_missing_mapping_file_errors(self, runner):
+        result = runner.invoke(
+            cli,
+            ["convert-sql", "-s", "icd_code = 'A'", "--mapping", "nonexistent.yaml"],
+        )
+        assert result.exit_code == 2
+
+    def test_mapping_error_is_shown(self, runner, mapping_file):
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "unknown_col = 'X'",
+                "--mapping",
+                str(mapping_file),
+            ],
+        )
+        assert result.exit_code == 1
+        assert "unknown_col" in result.output
+
+    def test_profile_flag_selects_profile(self, runner, tmp_path):
+        mapping = tmp_path / "mapping.yaml"
+        mapping.write_text(
+            "profiles:\n"
+            "  - name: a\n"
+            "    columns:\n"
+            "      col_a:\n"
+            "        concept: diagnosis\n"
+            "        system: ICD-10\n"
+            "  - name: b\n"
+            "    columns:\n"
+            "      col_b:\n"
+            "        concept: diagnosis\n"
+            "        system: ICD-10\n"
+        )
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "col_b = 'X'",
+                "--mapping",
+                str(mapping),
+                "--profile",
+                "b",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"code": "X"' in result.output
+
+    def test_metadata_file_merges_into_definition(self, runner, mapping_file, tmp_path):
+        metadata = tmp_path / "metadata.yaml"
+        metadata.write_text(
+            "title: My Definition\n"
+            "scope: specific\n"
+            "version: 1.0.0\n"
+            "location: Berlin\n"
+            "language: English\n"
+            "organization: RKI\n"
+        )
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--metadata-file",
+                str(metadata),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"title": "My Definition"' in result.output
+        assert '"organization": "RKI"' in result.output
+
+    def test_validate_flag_validates_output(self, runner, mapping_file, tmp_path):
+        metadata = tmp_path / "metadata.yaml"
+        metadata.write_text(
+            "title: My Definition\n"
+            "scope: specific\n"
+            "version: 1.0.0\n"
+            "location: Berlin\n"
+            "language: English\n"
+            "organization: RKI\n"
+        )
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--metadata-file",
+                str(metadata),
+                "--validate",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert "Validation successful" in result.output
+
+    def test_enrich_ontology_calls_enrich(self, runner, mapping_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            side_effect=lambda d, mapper, verbose_callback=None: d,
+        )
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--enrich-ontology",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_enrich.assert_called_once()
+
+    def test_dialect_flag_is_passed(self, runner, mapping_file):
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--dialect",
+                "mysql",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+
+
 class TestConvertToText:
     @pytest.fixture(autouse=True)
     def isolate_env(self, mocker, monkeypatch):
