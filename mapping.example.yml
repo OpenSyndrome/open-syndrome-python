@@ -1,0 +1,57 @@
+# OSI column mapping: tells `opensyndrome convert-sql` how to translate
+# each column referenced in a SQL fragment into an OSD criterion node.
+#
+# Top-level is a list of profiles (one per dataset shape). Select with
+# `--profile NAME`; the first profile is the default.
+
+profiles:
+  - name: ambulatory_care
+
+    # Reverse-lookup table: when your dataset encodes a value differently
+    # from OSD's canonical vocabulary, list `canonical: dataset_value`.
+    # The key matches a column `attribute`. SQL `sex = 'F'` then emits
+    # `value: "female"` so the resulting definition stays portable.
+    value_encodings:
+      sex:
+        male: M
+        female: F
+        other: O
+
+    columns:
+      # Numeric demographic. `dtype: integer` ensures `age > 18` emits
+      # `value: 18` (int) instead of `"18"` (string).
+      age:
+        concept: demographic_criteria
+        attribute: age
+        dtype: integer
+
+      # String demographic with value_encodings applied (see above).
+      # `dtype: string` is the default and may be omitted.
+      sex:
+        concept: demographic_criteria
+        attribute: sex
+
+      # Diagnosis code column. `system` is required so the converter
+      # emits a valid OSD `code` object (`{system: "ICD-10", code: "A90"}`).
+      # Multiple diagnosis columns may declare different systems
+      # (ICD-10, CID-10, SNOMED-CT, CEDIS, ...).
+      icd_code:
+        concept: diagnosis
+        system: ICD-10
+
+      # Boolean indicator / derived flag. `flag = TRUE` emits `value: true`.
+      ari_indicator:
+        concept: diagnostic_test
+        attribute: ari_indicator
+        dtype: boolean
+
+      # Free-text symptom column matched by text/regex.
+      chief_complaint:
+        concept: symptom
+
+  # A mapping file can describe several datasets. Pick with `--profile`.
+  - name: essence
+    columns:
+      discharge_dx:
+        concept: diagnosis
+        system: ICD-10
