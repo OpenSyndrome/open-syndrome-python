@@ -493,6 +493,129 @@ class TestConvertSql:
         )
         assert result.exit_code == 0, result.output
 
+    def test_malformed_yaml_mapping_shows_clean_error(self, runner, tmp_path):
+        bad = tmp_path / "mapping.yaml"
+        bad.write_text("profiles: [unclosed\n")
+        result = runner.invoke(
+            cli, ["convert-sql", "-s", "icd_code = 'A'", "--mapping", str(bad)]
+        )
+        assert result.exit_code != 0
+        assert "Could not parse" in result.output or "invalid" in result.output.lower()
+        assert "Traceback" not in result.output
+
+    def test_empty_mapping_file_rejected(self, runner, tmp_path):
+        empty = tmp_path / "mapping.yaml"
+        empty.write_text("")
+        result = runner.invoke(
+            cli, ["convert-sql", "-s", "icd_code = 'A'", "--mapping", str(empty)]
+        )
+        assert result.exit_code != 0
+        assert "empty" in result.output.lower()
+
+    def test_empty_metadata_file_rejected(self, runner, mapping_file, tmp_path):
+        empty = tmp_path / "metadata.yaml"
+        empty.write_text("")
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A'",
+                "--mapping",
+                str(mapping_file),
+                "--metadata-file",
+                str(empty),
+            ],
+        )
+        assert result.exit_code != 0
+        assert "empty" in result.output.lower()
+
+    def test_json_mapping_file_works(self, runner, tmp_path):
+        mapping = tmp_path / "mapping.json"
+        mapping.write_text(
+            '{"profiles": [{"name": "t", "columns": '
+            '{"icd_code": {"concept": "diagnosis", "system": "ICD-10"}}}]}'
+        )
+        result = runner.invoke(
+            cli,
+            ["convert-sql", "-s", "icd_code = 'A90'", "--mapping", str(mapping)],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"code": "A90"' in result.output
+
+    def test_validate_failure_exits_nonzero(self, runner, mapping_file):
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--validate",
+            ],
+        )
+        assert result.exit_code != 0
+        assert "Validation" in result.output or "❌" in result.output
+
+    def test_edit_replaces_output_when_user_saves(self, runner, mapping_file, mocker):
+        replacement = '{"inclusion_criteria": [], "title": "Edited"}'
+        mocker.patch("opensyndrome.cli.click.edit", return_value=replacement)
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--edit",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"title": "Edited"' in result.output
+
+    def test_no_enrich_ontology_skips_enrich(self, runner, mapping_file, mocker):
+        mock_enrich = mocker.patch("opensyndrome.cli.enrich_definition")
+        result = runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--no-enrich-ontology",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_enrich.assert_not_called()
+
+    def test_enrich_ontology_passes_default_mapper(self, runner, mapping_file, mocker):
+        mock_enrich = mocker.patch(
+            "opensyndrome.cli.enrich_definition",
+            side_effect=lambda d, **kwargs: d,
+        )
+        runner.invoke(
+            cli,
+            [
+                "convert-sql",
+                "-s",
+                "icd_code = 'A90'",
+                "--mapping",
+                str(mapping_file),
+                "--enrich-ontology",
+            ],
+        )
+        assert mock_enrich.call_args.kwargs["mapper"] == "ols"
+
+    def test_empty_inline_sql_rejected(self, runner, mapping_file):
+        result = runner.invoke(
+            cli,
+            ["convert-sql", "-s", "", "--mapping", str(mapping_file)],
+        )
+        assert result.exit_code != 0
+
 
 class TestConvertToText:
     @pytest.fixture(autouse=True)

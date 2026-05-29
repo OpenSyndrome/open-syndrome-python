@@ -1,6 +1,7 @@
 import json
 from functools import wraps
 from pathlib import Path
+from typing import Any
 
 from pygments import highlight, lexers, formatters
 import jsonschema
@@ -32,15 +33,18 @@ def cli():
 def validate_machine_readable_format_with_style(json_or_file, schema_file=None):
     try:
         validate_machine_readable_format(json_or_file, schema_file)
-        click.echo(click.style("✅ Validation successful!", fg="green"))
-    except (json.JSONDecodeError, json.decoder.JSONDecodeError) as e:
+    except json.JSONDecodeError as e:
         click.echo(click.style(f"❌ Invalid JSON: {e}", fg="red"), err=True)
+        raise click.exceptions.Exit(code=1)
     except jsonschema.exceptions.ValidationError as e:
         click.echo(click.style(f"❌ Validation error: {e}", fg="red"), err=True)
+        raise click.exceptions.Exit(code=1)
     except Exception as e:
         click.echo(
             click.style(f"❌ An unexpected error occurred: {e}", fg="red"), err=True
         )
+        raise click.exceptions.Exit(code=1)
+    click.echo(click.style("✅ Validation successful!", fg="green"))
 
 
 @cli.command("validate")
@@ -237,11 +241,40 @@ def enrich_json(json_file, edit, validate, mapper):
         validate_machine_readable_format_with_style(definition)
 
 
-def _load_mapping_file(path: Path) -> dict:
-    text = path.read_text()
-    if path.suffix.lower() == ".json":
-        return json.loads(text)
-    return yaml.safe_load(text)
+_YAML_SUFFIXES = {".yaml", ".yml"}
+
+
+def _load_structured_file(path: Path) -> dict[str, Any]:
+    """Parse a YAML or JSON file into a dict. Dispatches by file extension.
+
+    Raises ``click.ClickException`` on parse error or empty/non-dict content
+    so the user sees a clean message instead of a traceback.
+    """
+    text = path.read_text(encoding="utf-8")
+    suffix = path.suffix.lower()
+    try:
+        if suffix == ".json":
+            data = json.loads(text)
+        elif suffix in _YAML_SUFFIXES or suffix == "":
+            data = yaml.safe_load(text)
+        else:
+            raise click.ClickException(
+                f"Unsupported file extension for {path}: expected .yaml, .yml or .json."
+            )
+    except (json.JSONDecodeError, yaml.YAMLError) as exc:
+        raise click.ClickException(f"Could not parse {path}: {exc}") from exc
+
+    if data is None:
+        raise click.ClickException(f"{path} is empty.")
+    if not isinstance(data, dict):
+        raise click.ClickException(
+            f"{path} must contain a mapping at the top level, got {type(data).__name__}."
+        )
+    return data
+
+
+def _ontology_progress(name: str, curie: str) -> None:
+    click.echo(click.style(f"  {name} → {curie}"), err=True)
 
 
 @cli.command("convert-sql")
@@ -261,7 +294,7 @@ def _load_mapping_file(path: Path) -> dict:
     "--mapping",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     required=True,
-    help="Path to the column mapping file (YAML or JSON).",
+    help="Path to the column mapping file (YAML or JSON, dispatched by extension).",
 )
 @click.option(
     "--profile",
@@ -284,7 +317,9 @@ def _load_mapping_file(path: Path) -> dict:
 )
 @click.option("--edit", is_flag=True, help="Open editor on the generated JSON.")
 @click.option(
-    "--validate", is_flag=True, help="Validate the output against the OSD schema."
+    "--validate",
+    is_flag=True,
+    help="Validate the output against the OSD schema. Exits non-zero on failure.",
 )
 @click.option(
     "--enrich-ontology / --no-enrich-ontology",
@@ -299,26 +334,29 @@ def _load_mapping_file(path: Path) -> dict:
     help="Ontology mapper to use with --enrich-ontology.",
 )
 def convert_sql(
-    sql,
-    sql_file,
-    mapping,
-    profile,
-    dialect,
-    metadata_file,
-    edit,
-    validate,
-    enrich_ontology,
-    mapper,
-):
+    sql: str | None,
+    sql_file: Path | None,
+    mapping: Path,
+    profile: str | None,
+    dialect: str,
+    metadata_file: Path | None,
+    edit: bool,
+    validate: bool,
+    enrich_ontology: bool,
+    mapper: str,
+) -> None:
     """Convert a SQL fragment (or full SELECT ... WHERE) to OSD JSON."""
-    if sql and sql_file:
+    if sql is not None and sql_file is not None:
         raise click.UsageError("Cannot use --sql and --sql-file at the same time.")
-    if not sql and not sql_file:
+    if sql is None and sql_file is None:
         raise click.UsageError("Provide either --sql or --sql-file.")
 
-    sql_text = sql if sql else sql_file.read_text()
-    mapping_data = _load_mapping_file(mapping)
-    metadata = _load_mapping_file(metadata_file) if metadata_file else None
+    sql_text = sql if sql is not None else sql_file.read_text(encoding="utf-8")
+    if not sql_text.strip():
+        raise click.UsageError("SQL input is empty.")
+
+    mapping_data = _load_structured_file(mapping)
+    metadata = _load_structured_file(metadata_file) if metadata_file else None
 
     try:
         definition = sql_to_osd(
@@ -334,12 +372,8 @@ def convert_sql(
 
     if enrich_ontology:
         click.echo(click.style("Enriching ontology IDs...", fg="cyan"), err=True)
-
-        def _progress(name, curie):
-            click.echo(click.style(f"  {name} → {curie}"), err=True)
-
         definition = enrich_definition(
-            definition, mapper=mapper, verbose_callback=_progress
+            definition, mapper=mapper, verbose_callback=_ontology_progress
         )
 
     if edit:
