@@ -11,8 +11,10 @@ import pytest
 class TestCheckProviderAvailable:
     def test_ollama_available(self, mocker):
         mocker.patch(
-            "opensyndrome.providers.ollama.list",
-            return_value=Mock(models=[Mock(model="mistral")]),
+            "opensyndrome.providers.ollama.Client",
+            return_value=Mock(
+                list=Mock(return_value=Mock(models=[Mock(model="mistral")]))
+            ),
         )
 
         from opensyndrome.providers import check_provider_available
@@ -24,8 +26,10 @@ class TestCheckProviderAvailable:
 
     def test_ollama_model_not_pulled(self, mocker):
         mocker.patch(
-            "opensyndrome.providers.ollama.list",
-            return_value=Mock(models=[Mock(model="llama3:latest")]),
+            "opensyndrome.providers.ollama.Client",
+            return_value=Mock(
+                list=Mock(return_value=Mock(models=[Mock(model="llama3:latest")]))
+            ),
         )
 
         from opensyndrome.providers import check_provider_available
@@ -37,8 +41,10 @@ class TestCheckProviderAvailable:
 
     def test_ollama_unavailable(self, mocker):
         mocker.patch(
-            "opensyndrome.providers.ollama.list",
-            side_effect=ConnectionError("Connection refused"),
+            "opensyndrome.providers.ollama.Client",
+            return_value=Mock(
+                list=Mock(side_effect=ConnectionError("Connection refused"))
+            ),
         )
 
         from opensyndrome.providers import check_provider_available

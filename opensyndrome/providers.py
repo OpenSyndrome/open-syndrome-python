@@ -61,12 +61,24 @@ def build_model_string(provider: str, model: str | None = None) -> str:
     return f"{prefix}{resolved_model}"
 
 
+def _ollama_host() -> str | None:
+    """Resolve the ollama base URL from a single canonical var.
+
+    Accepts OLLAMA_HOST (recommended), or OLLAMA_BASE_URL / OLLAMA_API_BASE for
+    backward compatibility. The resolved value drives both litellm and the
+    ollama client, so one variable is enough.
+    """
+    return (
+        os.environ.get("OLLAMA_HOST")
+        or os.environ.get("OLLAMA_BASE_URL")
+        or os.environ.get("OLLAMA_API_BASE")
+    )
+
+
 def get_litellm_kwargs(provider: str) -> dict:
     """Return extra kwargs to pass to litellm (e.g. api_base for ollama)."""
     if provider == "ollama":
-        base_url = os.environ.get("OLLAMA_BASE_URL") or os.environ.get(
-            "OLLAMA_API_BASE"
-        )
+        base_url = _ollama_host()
         if base_url:
             return {"api_base": base_url}
     return {}
@@ -79,7 +91,8 @@ def get_instructor_client(provider: str = DEFAULT_PROVIDER):
 
 def _ollama_model_exists(model: str) -> bool:
     """Check if a model is available locally in ollama."""
-    available_models = {m.model for m in ollama.list().models}
+    client = ollama.Client(host=_ollama_host())
+    available_models = {m.model for m in client.list().models}
     # normalize: "mistral" matches "mistral:latest"
     normalized = model if ":" in model else f"{model}:latest"
     return normalized in available_models or model in available_models
