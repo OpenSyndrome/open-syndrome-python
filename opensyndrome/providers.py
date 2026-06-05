@@ -4,7 +4,15 @@ import instructor
 import litellm
 import ollama
 
-SUPPORTED_PROVIDERS = ["ollama", "openai", "anthropic", "mistral", "deepseek", "gemini"]
+SUPPORTED_PROVIDERS = [
+    "ollama",
+    "openai",
+    "anthropic",
+    "mistral",
+    "deepseek",
+    "gemini",
+    "huggingface",
+]
 DEFAULT_PROVIDER = "ollama"
 DEFAULT_MODEL = "mistral"
 
@@ -24,6 +32,7 @@ PROVIDER_MODEL_PREFIXES = {
     "mistral": "mistral/",
     "deepseek": "deepseek/",
     "gemini": "gemini/",
+    "huggingface": "huggingface/",
 }
 
 PROVIDER_ENV_KEYS = {
@@ -32,6 +41,7 @@ PROVIDER_ENV_KEYS = {
     "mistral": "MISTRAL_API_KEY",
     "deepseek": "DEEPSEEK_API_KEY",
     "gemini": "GEMINI_API_KEY",
+    "huggingface": "HF_TOKEN",
 }
 
 PROVIDER_INSTRUCTOR_MODES = {
@@ -41,6 +51,7 @@ PROVIDER_INSTRUCTOR_MODES = {
     "mistral": instructor.Mode.JSON,
     "deepseek": instructor.Mode.JSON,
     "gemini": instructor.Mode.JSON,
+    "huggingface": instructor.Mode.JSON,
 }
 
 
