@@ -52,6 +52,11 @@ Strict Rules:
 - Do not add any information not in the source text
 - Use logical operators to capture text's precise meaning
 - If text is ambiguous, minimize assumptions
+- EVERY criterion object MUST include a short, non-empty "name". This includes
+  grouping criteria that use a logical_operator (AND / OR / AT_LEAST): name them
+  after what they group, e.g. "Associated symptoms" or "Haemorrhagic signs".
+- When logical_operator is AT_LEAST, always include logical_operator_arguments
+  with the minimum count, e.g. [2].
 
 Example documents to reference:
 {examples}

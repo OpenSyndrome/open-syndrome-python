@@ -125,6 +125,15 @@ class TestGenerateMachineReadableFormat:
         )
         return mock_client
 
+    def test_prompt_requires_name_on_every_criterion(self, mock_instructor_client):
+        generate_machine_readable_format("A case of pneumonia", provider="ollama")
+
+        content = mock_instructor_client.chat.completions.create.call_args.kwargs[
+            "messages"
+        ][0]["content"].lower()
+        assert "every criterion" in content
+        assert "name" in content
+
     def test_uses_response_model(self, mock_instructor_client):
         generate_machine_readable_format("A case of pneumonia", provider="ollama")
 
