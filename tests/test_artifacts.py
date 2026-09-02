@@ -91,10 +91,12 @@ class TestLocalDefinitionsDir:
 
     def test_expands_user_in_env_var(self, clean_env, monkeypatch, tmp_path):
         _add_definition(tmp_path / "local")
+        # expanduser reads HOME on POSIX and USERPROFILE on Windows
         monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("USERPROFILE", str(tmp_path))
         monkeypatch.setenv(DEFINITIONS_DIR_ENV_VAR, "~/local")
 
-        assert local_definitions_dir() == tmp_path / "local"
+        assert local_definitions_dir() == (tmp_path / "local").resolve()
 
     def test_relative_env_var_is_returned_as_absolute_path(
         self, clean_env, monkeypatch, tmp_path
