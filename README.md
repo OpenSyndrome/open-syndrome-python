@@ -46,6 +46,33 @@ opensyndrome download definitions
 
 The files will be placed in the folder `.open_syndrome` in `$HOME`.
 
+### Using your own local definitions
+
+The definitions published by the Open Syndrome Initiative (the community definitions) always live in
+`~/.open_syndrome/v1/definitions`. To add definitions of your own that are not published on GitHub, point
+`OPENSYNDROME_DEFINITIONS_DIR` to a directory you maintain; it is never written to by the CLI.
+
+```bash
+OPENSYNDROME_DEFINITIONS_DIR=./my-definitions
+```
+
+To ignore the community definitions altogether and use only yours, also set
+`OPENSYNDROME_LOCAL_DEFINITIONS_ONLY=1` (`true`, `yes` and `on` also work). Nothing is downloaded in that
+mode, not even with `--force`.
+
+From Python, `opensyndrome.artifacts.get_definition_dirs()` returns the directories to read, in order:
+
+| `OPENSYNDROME_DEFINITIONS_DIR` | `OPENSYNDROME_LOCAL_DEFINITIONS_ONLY` | Result |
+|---|---|---|
+| unset | unset | `[community]` |
+| set | unset | `[community, local]` |
+| set | set | `[local]` |
+| unset | set | error |
+
+It also accepts `local_dir` and `local_only` keyword arguments that override the environment variables.
+The former `get_definition_dir()` still returns the community directory only, ignoring these variables;
+it emits a `DeprecationWarning` and will be removed in a future version.
+
 ### Providers and configuration
 
 The provider and model can be set via environment variables so you don't have to pass them on every command:
