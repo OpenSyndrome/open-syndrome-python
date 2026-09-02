@@ -327,3 +327,54 @@ class TestConvertToText:
         )
         result = runner.invoke(cli, ["humanize", str(json_file)])
         assert result.exit_code == 1
+
+
+class TestDownloadDefinitions:
+    @pytest.fixture
+    def dirs(self, tmp_path):
+        return [tmp_path / "community", tmp_path / "local"]
+
+    @pytest.fixture
+    def mock_get_dirs(self, mocker, dirs):
+        return mocker.patch("opensyndrome.cli.get_definition_dirs", return_value=dirs)
+
+    @pytest.mark.parametrize("force", [True, False])
+    @pytest.mark.parametrize("local_only", [True, False])
+    def test_definitions_prints_every_dir_and_warns_when_local_only(
+        self, mock_get_dirs, dirs, force, local_only
+    ):
+        env = {"OPENSYNDROME_LOCAL_DEFINITIONS_ONLY": "1" if local_only else None}
+        args = ["download", "definitions"]
+        if force:
+            args.append("--force")
+
+        result = CliRunner(env=env).invoke(cli, args)
+
+        assert result.exit_code == 0
+        mock_get_dirs.assert_called_once_with(force=force)
+        assert ("OPENSYNDROME_LOCAL_DEFINITIONS_ONLY" in result.output) is local_only
+        for directory in dirs:
+            assert str(directory) in result.output
+
+    def test_definitions_reports_missing_local_dir_as_error(self, mocker):
+        mocker.patch(
+            "opensyndrome.cli.get_definition_dirs",
+            side_effect=ValueError("OPENSYNDROME_DEFINITIONS_DIR must be set"),
+        )
+
+        result = CliRunner().invoke(cli, ["download", "definitions"])
+
+        assert result.exit_code == 1
+        assert "OPENSYNDROME_DEFINITIONS_DIR must be set" in result.output
+
+    def test_schema_ignores_local_only(self, mocker, tmp_path):
+        mock_get_schema = mocker.patch(
+            "opensyndrome.cli.get_schema_filepath", return_value=tmp_path
+        )
+        env = {"OPENSYNDROME_LOCAL_DEFINITIONS_ONLY": "1"}
+
+        result = CliRunner(env=env).invoke(cli, ["download", "schema"])
+
+        assert result.exit_code == 0
+        mock_get_schema.assert_called_once_with(force=False)
+        assert "OPENSYNDROME_LOCAL_DEFINITIONS_ONLY" not in result.output

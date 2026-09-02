@@ -12,7 +12,12 @@ from opensyndrome.converters import (
     generate_human_readable_format,
 )
 from opensyndrome.ontology import enrich_definition, MAPPERS
-from opensyndrome.artifacts import get_schema_filepath, get_definition_dir
+from opensyndrome.artifacts import (
+    LOCAL_DEFINITIONS_ONLY_ENV_VAR,
+    get_schema_filepath,
+    get_definition_dirs,
+    local_definitions_only,
+)
 from opensyndrome.validators import validate_machine_readable_format
 from opensyndrome.providers import (
     build_model_string,
@@ -284,21 +289,37 @@ def convert_to_text(json_file, model, language, provider):
 def download_entity(entity, force):
     match entity:
         case "schema":
-            result = get_schema_filepath(force=force)
-        case "definitions":
-            result = get_definition_dir(force=force)
-        case _:
-            result = None
-
-    if not result:
-        click.echo(
-            click.style(
-                f"Invalid entity: {entity}. Expected: `schema` or `definitions`.",
-                fg="red",
+            click.echo(
+                click.style(
+                    f"{entity} available at: {get_schema_filepath(force=force)}",
+                    fg="green",
+                )
             )
-        )
-    else:
-        click.echo(click.style(f"{entity} available at: {result}", fg="green"))
+        case "definitions":
+            if local_definitions_only():
+                click.echo(
+                    click.style(
+                        f"{LOCAL_DEFINITIONS_ONLY_ENV_VAR} is set: skipping download, "
+                        "using local definitions only.",
+                        fg="yellow",
+                    )
+                )
+            try:
+                dirs = get_definition_dirs(force=force)
+            except (ValueError, FileNotFoundError) as e:
+                click.echo(click.style(f"❌ {e}", fg="red"), err=True)
+                raise SystemExit(1)
+            for directory in dirs:
+                click.echo(
+                    click.style(f"{entity} available at: {directory}", fg="green")
+                )
+        case _:
+            click.echo(
+                click.style(
+                    f"Invalid entity: {entity}. Expected: `schema` or `definitions`.",
+                    fg="red",
+                )
+            )
 
 
 def main():
